@@ -1,0 +1,143 @@
+{
+  "current_floor": 1,
+  "max_unlocked_floor": 15,
+  "player": {
+    "level": 7,
+    "xp": 122,
+    "xp_to_next": 1280,
+    "max_hp": 160,
+    "current_hp": 160,
+    "attack": 22,
+    "physical_defense": 9,
+    "magical_defense": 7,
+    "active_skills": [
+      [
+        "SelfHealSkill",
+        1
+      ],
+      [
+        "FireballSkill",
+        2
+      ],
+      [
+        "SlashSkill",
+        3
+      ],
+      [
+        "TheWorldSkill",
+        1
+      ]
+    ],
+    "passive_skills": [],
+    "inventory_items": [
+      {
+        "base_name": "治疗药剂",
+        "rarity": "RARE",
+        "tile_char": "P",
+        "type": "consumable",
+        "effect_type": "heal",
+        "effect_value": 54
+      },
+      {
+        "base_name": "恢复灵药",
+        "rarity": "RARE",
+        "tile_char": "P",
+        "type": "consumable",
+        "effect_type": "heal",
+        "effect_value": 33
+      },
+      {
+        "base_name": "神谕药剂",
+        "rarity": "LEGENDARY",
+        "tile_char": "P",
+        "type": "consumable",
+        "effect_type": "heal",
+        "effect_value": 240
+      },
+      {
+        "base_name": "时光沙漏",
+        "rarity": "EPIC",
+        "tile_char": "C",
+        "type": "charm",
+        "slot": "charm",
+        "skill_class_name": "TheWorldSkill",
+        "cd_bonus": 0.5,
+        "power_bonus": 0.5
+      },
+      {
+        "base_name": "灵纹斗篷",
+        "rarity": "EPIC",
+        "tile_char": "A",
+        "type": "equipment",
+        "slot": "armor",
+        "atk": 4,
+        "pdef": 4,
+        "mdef": 24,
+        "defense_type": "magical"
+      },
+      {
+        "base_name": "魔渊之刃",
+        "rarity": "LEGENDARY",
+        "tile_char": "W",
+        "type": "equipment",
+        "slot": "weapon",
+        "atk": 162,
+        "pdef": 27,
+        "mdef": 3,
+        "defense_type": "physical"
+      },
+      {
+        "base_name": "神谕药剂",
+        "rarity": "LEGENDARY",
+        "tile_char": "P",
+        "type": "consumable",
+        "effect_type": "heal",
+        "effect_value": 240
+      },
+      {
+        "base_name": "烈焰之心",
+        "rarity": "LEGENDARY",
+        "tile_char": "C",
+        "type": "charm",
+        "slot": "charm",
+        "skill_class_name": "FireballSkill",
+        "cd_bonus": 0.6000000000000001,
+        "power_bonus": 1.5
+      }
+    ],
+    "equipped": {
+      "weapon": {
+        "base_name": "魔渊之刃",
+        "rarity": "LEGENDARY",
+        "tile_char": "W",
+        "type": "equipment",
+        "slot": "weapon",
+        "atk": 486,
+        "pdef": 81,
+        "mdef": 9,
+        "defense_type": "physical"
+      },
+      "armor": {
+        "base_name": "灵纹斗篷",
+        "rarity": "RARE",
+        "tile_char": "A",
+        "type": "equipment",
+        "slot": "armor",
+        "atk": 1,
+        "pdef": 1,
+        "mdef": 22,
+        "defense_type": "magical"
+      },
+      "charm": {
+        "base_name": "时光沙漏",
+        "rarity": "LEGENDARY",
+        "tile_char": "C",
+        "type": "charm",
+        "slot": "charm",
+        "skill_class_name": "TheWorldSkill",
+        "cd_bonus": 0.7,
+        "power_bonus": 0.75
+      }
+    }
+  }
+}
