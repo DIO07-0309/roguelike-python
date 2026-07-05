@@ -252,7 +252,7 @@ class GameEngine:
             "重庆大学大数据与软件学院 · 程序设计实训", True, (80, 80, 80))
         self.screen.blit(cr, (sw // 2 - cr.get_width() // 2, sh - 50))
         dev = _get_font(14).render(
-            "开发者：周禹同  20252450", True, (140, 140, 160))
+            "开发者：ruozhiDIO", True, (140, 140, 160))
         self.screen.blit(dev, (sw // 2 - dev.get_width() // 2, sh - 30))
         pygame.display.flip()
 
