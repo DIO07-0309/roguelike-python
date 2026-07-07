@@ -1,0 +1,32 @@
+[
+  {
+    "id": "poison",
+    "display_name": "中毒",
+    "short_name": "毒",
+    "duration": 4.0,
+    "max_stacks": 5,
+    "tick_interval": 0.5,
+    "tick_damage": 3,
+    "hud_color": [100, 220, 80]
+  },
+  {
+    "id": "slow",
+    "display_name": "减速",
+    "short_name": "慢",
+    "duration": 3.0,
+    "max_stacks": 3,
+    "tick_interval": 0.0,
+    "tick_damage": 0,
+    "hud_color": [120, 180, 255]
+  },
+  {
+    "id": "attack_up",
+    "display_name": "攻击提升",
+    "short_name": "攻",
+    "duration": 6.0,
+    "max_stacks": 3,
+    "tick_interval": 0.0,
+    "tick_damage": 0,
+    "hud_color": [255, 150, 50]
+  }
+]

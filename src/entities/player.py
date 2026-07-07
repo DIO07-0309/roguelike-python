@@ -70,8 +70,9 @@ class Player:
         self.combat = CombatStats(max_hp, attack,
                                   physical_defense, magical_defense)
         self._last_attack_time = -999.0
-        # 玩家的攻击类型：普攻为物理
         self.attack_type = AttackType.PHYSICAL
+        # Buff 系统
+        self.active_buffs = []
         # 背包系统
         self.inventory = Inventory(inv_capacity)
         # 技能系统

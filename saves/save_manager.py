@@ -81,6 +81,8 @@ def _serialize_player(player) -> dict:
         "passive_skills": passive_data,
         "inventory_items": items_list,
         "equipped": equipped_data,
+        "active_buffs": [[b.id, b.stacks, b.remaining, b.tick_timer]
+                         for b in player.active_buffs],
     }
 
 
@@ -181,6 +183,17 @@ def _deserialize_player(data: dict):
         if isinstance(item, EquipmentItem):
             p.inventory.equipped[slot] = item
             item.apply(p)
+    # 恢复 Buff
+    from src.systems.buff_system import BuffInstance
+    for buf_data in data.get("active_buffs", []):
+        if len(buf_data) >= 3:
+            b = BuffInstance()
+            b.id = buf_data[0]
+            b.stacks = buf_data[1]
+            b.remaining = buf_data[2]
+            b.tick_timer = buf_data[3] if len(buf_data) >= 4 else 0.0
+            if b.stacks > 0 and b.remaining > 0:
+                p.active_buffs.append(b)
     return p
 
 

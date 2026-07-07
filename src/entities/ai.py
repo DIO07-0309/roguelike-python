@@ -190,7 +190,8 @@ class MonsterAI:
             delta_time: 帧耗时。
         """
         entity = monster.entity
-        speed = self.move_speed
+        from src.systems.buff_system import get_effective_speed
+        speed = get_effective_speed(monster, self.move_speed)
 
         # X 轴
         entity.position.x += move_x * speed * delta_time

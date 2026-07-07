@@ -50,8 +50,10 @@ def main():
 
     from src.bgm_engine import init_bgm
     from src.sfx_engine import init_sfx
+    from src.systems.buff_system import load_buff_defs
     init_bgm()
     init_sfx()
+    load_buff_defs("resources/buffs.json")
 
     engine = GameEngine(screen, clock)
     engine.run()

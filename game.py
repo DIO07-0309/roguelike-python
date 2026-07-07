@@ -322,6 +322,7 @@ class GameEngine:
         # 2. 怪物
         for monster in self.monsters:
             monster.render(self.screen, camera_x, camera_y)
+            self._draw_monster_buffs(monster, camera_x, camera_y)
         # 3. 地面掉落物
         self._render_ground_items(camera_x, camera_y)
         # 4. 玩家
@@ -449,7 +450,8 @@ class GameEngine:
             return
         move_x, move_y = self.player.handle_input(keys)
         entity = self.player.entity
-        speed = self.player.speed
+        from src.systems.buff_system import get_effective_speed
+        speed = get_effective_speed(self.player, self.player.speed)
 
         # ---- X 轴移动 + 碰撞 ----
         entity.position.x += move_x * speed * delta_time
@@ -472,12 +474,29 @@ class GameEngine:
 
         self.player.update(delta_time)
         self._tick_skill_regen(delta_time)
+        self._tick_buff_system(delta_time)
 
     def _tick_skill_regen(self, dt: float):
         """自愈 Lv3 持续回复。"""
         for sk in self.player.skills.active_skills:
             if hasattr(sk, "tick_regen"):
                 sk.tick_regen(self.player, dt)
+
+    def _tick_buff_system(self, dt: float):
+        """每帧结算所有 Buff — 玩家 + 怪物。"""
+        from src.systems.buff_system import tick_buffs
+        tick_buffs(self.player, dt)
+        for m in self.monsters:
+            tick_buffs(m, dt)
+        # 玩家被 DOT 毒死 → 切死亡画面
+        if not self.player.combat.is_alive:
+            self.state = GameState.DEATH
+            return
+        # 怪物被 DOT 毒死 → 走击杀流程
+        dead = [m for m in self.monsters if not m.combat.is_alive]
+        for m in dead:
+            self._on_monster_killed(m)
+        self.monsters = [m for m in self.monsters if m.combat.is_alive]
 
     # ---- 楼层系统 ----
 
@@ -786,9 +805,10 @@ class GameEngine:
         if target is None:
             return
         from src.systems.combat_system import calculate_damage
+        from src.systems.buff_system import get_effective_attack
         atk_type = self.player.attack_type
         dmg = calculate_damage(
-            self.player.combat.get_effective_attack(),
+            get_effective_attack(self.player),
             target.combat.get_effective_defense(atk_type),
             atk_type)
         self.player._last_attack_time = self._game_time
@@ -1101,6 +1121,32 @@ class GameEngine:
             stair_surf = font.render(stair_text, True, (100, 255, 100))
             self.screen.blit(stair_surf, (bar_x, bar_y + bar_h + 28))
         self._render_skill_bar(bar_x, bar_y + bar_h + 50)
+        # Buff HUD
+        self._draw_player_buffs()
+
+    def _draw_player_buffs(self):
+        """玩家 Buff HUD — 技能栏下方。"""
+        if not self.player or not self.player.active_buffs:
+            return
+        from src.systems.buff_system import get_buff_display_name, format_buff_time, get_buff_hud_color
+        x, y = 10, 56.0 + len(self.player.skills.active_skills) * 28.0 + 4.0
+        for b in self.player.active_buffs:
+            line = f"{get_buff_display_name(b.id)} x{b.stacks}  {format_buff_time(b.remaining)}"
+            c = get_buff_hud_color(b.id)
+            surf = _get_font(14).render(line, True, c)
+            self.screen.blit(surf, (x, y))
+            y += 18
+
+    def _draw_monster_buffs(self, monster, cam_x, cam_y):
+        """怪物头顶 Buff 标签。"""
+        if not monster.active_buffs:
+            return
+        from src.systems.buff_system import get_buff_short_name, get_buff_hud_color
+        label = " ".join(f"{get_buff_short_name(b.id)}x{b.stacks}" for b in monster.active_buffs)
+        surf = _get_font(12).render(label, True, get_buff_hud_color(monster.active_buffs[0].id))
+        px = monster.entity.rect.x - cam_x + (monster.entity.rect.w - surf.get_width()) / 2
+        py = monster.entity.rect.y - cam_y - 16
+        self.screen.blit(surf, (px, py))
 
     def _draw_xp_bar(self, x: int, y: int, w: int, h: int,
                      xp: int, xp_next: int, level: int):

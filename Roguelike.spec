@@ -1,24 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [('resources/buffs.json', 'resources'), ('assets/jojo_timestop.mp3', 'assets')]
 binaries = []
-hiddenimports = ['saves.save_manager', 'config', 'game']
-
-# 收集 src 子模块
-hiddenimports += collect_submodules('src')
-
-# assets 文件（The World 时停音效）
-datas += [('assets/jojo_timestop.mp3', 'assets')]
-
-# ============================================================
-# 关键：排除 numpy 和 MKL（游戏完全不需要）
-# collect_all('pygame') 会递归拖进 numpy + 29个MKL DLL（633MB）
-# 依赖 PyInstaller 内置的 hook-pygame.py 即可正确处理 pygame
-# ============================================================
-excludes = ['numpy', 'mkl', 'scipy', 'pandas', 'matplotlib',
-            'pygame.examples', 'pygame.tests', 'pygame.docs',
-            'pygame._camera_opencv', 'pygame._camera_vidcapture']
+hiddenimports = []
+tmp_ret = collect_all('pygame')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
@@ -30,7 +17,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=excludes,
+    excludes=[],
     noarchive=False,
     optimize=0,
 )
@@ -46,7 +33,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,       # 游戏不需要控制台窗口
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

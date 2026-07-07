@@ -198,7 +198,9 @@ class SlashSkill(ActiveSkill):
             name="斩击", cooldown=2.0, max_level=3,
             icon_char='S', description="前方扇形范围伤害",
         )
-        self._cone_range = 1       # 范围半径（瓦片数）
+        self._cone_range = 1
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("poison", 1, 0.30, BuffTarget.ENEMY)]
 
     def _on_level_up(self):
         if self.level == 2:
@@ -228,6 +230,10 @@ class SlashSkill(ActiveSkill):
                     AttackType.PHYSICAL)
                 target.combat.take_damage(dmg)
                 total_dmg += dmg
+        # Buff 触发
+        from src.systems.buff_system import apply_triggers
+        for t in hit_list:
+            apply_triggers(self.triggers, caster, t)
         desc = f"斩击Lv{self.level} 命中 {len(hit_list)} 目标"
         desc += "（二连击）" if hits_per_target > 1 else ""
         return f"{desc}，造成 {total_dmg} 点伤害"
@@ -248,6 +254,8 @@ class FireballSkill(ActiveSkill):
         )
         self._target_count = 1
         self._range = 6.0
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("slow", 1, 0.25, BuffTarget.ENEMY)]
 
     def _on_level_up(self):
         if self.level == 2:
@@ -285,6 +293,10 @@ class FireballSkill(ActiveSkill):
                 AttackType.MAGICAL)
             t.combat.take_damage(dmg)
             total_dmg += dmg
+        # Buff 触发: 对最近目标附 slow
+        from src.systems.buff_system import apply_triggers
+        if chosen:
+            apply_triggers(self.triggers, caster, chosen[0])
         return f"神罚Lv{self.level} 命中 {len(chosen)} 目标，造成 {total_dmg} 伤害"
 
     def get_level_bonus_text(self) -> str:
@@ -300,7 +312,9 @@ class SelfHealSkill(ActiveSkill):
             name="自愈", cooldown=8.0, max_level=3,
             icon_char='H', description="恢复+持续再生",
         )
-        self._regen_left = 0.0      # 剩余持续治疗时间（秒）
+        self._regen_left = 0.0
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("attack_up", 1, 1.0, BuffTarget.SELF)]
 
     def _on_level_up(self):
         if self.level == 2:
@@ -321,6 +335,9 @@ class SelfHealSkill(ActiveSkill):
         if self.level >= 3:
             self._regen_left = 4.0
             desc += "（+4秒持续再生）"
+        # Buff 触发: 给自身 attack_up
+        from src.systems.buff_system import apply_triggers_self
+        apply_triggers_self(self.triggers, caster)
         return desc
 
     def tick_regen(self, caster, delta_time: float):

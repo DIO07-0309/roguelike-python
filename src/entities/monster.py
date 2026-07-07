@@ -63,6 +63,9 @@ class Monster:
         self.ai = ai if ai is not None else MonsterAI()
         self.is_boss = False
         self.attack_type = attack_type
+        # Buff 系统
+        self.active_buffs = []
+        self.on_hit_triggers = []   # BuffTrigger 列表
 
     # =========================================================
     #  战斗接口
@@ -117,11 +120,13 @@ class Monster:
         返回：
             实际伤害值。
         """
-        effective_atk = self.combat.get_effective_attack()
+        from src.systems.buff_system import get_effective_attack, apply_triggers
+        atk = get_effective_attack(self)
         target_def = target.combat.get_effective_defense(self.attack_type)
-        damage = calculate_damage(effective_atk, target_def, self.attack_type)
+        damage = calculate_damage(atk, target_def, self.attack_type)
         target.combat.take_damage(damage)
         self._last_attack_time = game_time
+        apply_triggers(self.on_hit_triggers, None, target)
         return damage
 
     # =========================================================
@@ -212,4 +217,11 @@ def spawn_monster(x: int, y: int, monster_type: str = "slime") -> Monster:
                 "attack_type": AttackType.PHYSICAL},
     }
     cfg = presets.get(monster_type, presets["slime"])
-    return Monster(x, y, **cfg)
+    m = Monster(x, y, **cfg)
+    if monster_type == "slime":
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        m.on_hit_triggers = [BuffTrigger("slow", 1, 0.25, BuffTarget.ENEMY)]
+    elif monster_type == "orc":
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        m.on_hit_triggers = [BuffTrigger("poison", 1, 0.25, BuffTarget.ENEMY)]
+    return m
