@@ -56,6 +56,8 @@ def main():
     load_buff_defs("resources/buffs.json")
 
     engine = GameEngine(screen, clock)
+    from src.scenes.title_scene import TitleScene
+    engine.change_scene(TitleScene(engine))
     engine.run()
     pygame.quit()
 

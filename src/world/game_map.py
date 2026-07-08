@@ -19,6 +19,7 @@ import pygame
 from config import TILE_SIZE
 from src.world.tile import Tile, TileType
 from src.world.tile_renderer import draw_tile as draw_tile_enhanced
+from src.world.special_room import SpecialRoom
 
 
 class GameMap:
@@ -47,6 +48,7 @@ class GameMap:
         self.pixel_height = height * tile_size
         # 初始化为全墙 —— 后续通过 load_from_template 填充
         self._tiles: list[list[Tile]] = []
+        self.special_rooms: list[SpecialRoom] = []  # B8: 特殊房间列表
         self._init_blank()
 
     # =========================================================
@@ -213,6 +215,17 @@ class GameMap:
             [Tile(TileType.WALL) for _ in range(self.width)]
             for _ in range(self.height)
         ]
+
+    # =========================================================
+    #  特殊房间查询 (B8)
+    # =========================================================
+
+    def get_special_room_at(self, tile_x: int, tile_y: int) -> SpecialRoom | None:
+        """返回 (tile_x, tile_y) 所在的特殊房间，无则返回 None。"""
+        for sr in self.special_rooms:
+            if sr.rx <= tile_x < sr.rx + sr.rw and sr.ry <= tile_y < sr.ry + sr.rh:
+                return sr
+        return None
 
     def _in_bounds(self, tile_x: int, tile_y: int) -> bool:
         """检查瓦片坐标是否在地图范围内。

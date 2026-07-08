@@ -187,11 +187,11 @@ def _deserialize_player(data: dict):
     from src.systems.buff_system import BuffInstance
     for buf_data in data.get("active_buffs", []):
         if len(buf_data) >= 3:
-            b = BuffInstance()
-            b.id = buf_data[0]
-            b.stacks = buf_data[1]
-            b.remaining = buf_data[2]
-            b.tick_timer = buf_data[3] if len(buf_data) >= 4 else 0.0
+            b = BuffInstance(
+                id=buf_data[0],
+                stacks=buf_data[1],
+                remaining=buf_data[2],
+                tick_timer=buf_data[3] if len(buf_data) >= 4 else 0.0)
             if b.stacks > 0 and b.remaining > 0:
                 p.active_buffs.append(b)
     return p
@@ -232,13 +232,19 @@ def _deserialize_item(data: dict):
 # =========================================================
 
 def save_game(player, current_floor: int,
-              max_unlocked_floor: int) -> bool:
+              max_unlocked_floor: int,
+              dungeon_seed: int = 0,
+              special_triggered: list = None,
+              special_discovered: list = None) -> bool:
     """保存游戏进度到 JSON。
 
     参数：
         player: 玩家实例。
         current_floor: 当前关卡号。
         max_unlocked_floor: 已解锁的最高关卡。
+        dungeon_seed: 当前楼层地牢种子 (B8)。
+        special_triggered: 特殊房间触发状态列表 (B8)。
+        special_discovered: 特殊房间发现状态列表 (B10)。
 
     返回：
         True 表示保存成功。
@@ -247,6 +253,9 @@ def save_game(player, current_floor: int,
         "current_floor": current_floor,
         "max_unlocked_floor": max_unlocked_floor,
         "player": _serialize_player(player),
+        "dungeon_seed": dungeon_seed,
+        "special_triggered": special_triggered or [],
+        "special_discovered": special_discovered or [],
     }
     try:
         os.makedirs(SAVE_DIR, exist_ok=True)
@@ -272,7 +281,10 @@ def load_save() -> dict | None:
         return {
             "player": player,
             "current_floor": data["current_floor"],
-            "max_unlocked_floor": data["max_unlocked_floor"],
+            "max_unlocked_floor": data.get("max_unlocked_floor", data["current_floor"]),
+            "dungeon_seed": data.get("dungeon_seed", 0),
+            "special_triggered": data.get("special_triggered", []),
+            "special_discovered": data.get("special_discovered", []),
         }
     except Exception:
         return None

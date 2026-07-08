@@ -1,26 +1,9 @@
-# Python
+﻿build/
+dist/
 __pycache__/
 *.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-*.egg
-
-# Virtualenv
-.venv/
-venv/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Pygame specific
-*.log
+*.exe
+*.dll
 crash.log
+game.log
+saves/save.json

@@ -241,9 +241,57 @@ def draw_tile(screen: pygame.Surface, tile: Tile,
         draw_stairs(screen, x, y)
         return
     elif tile.kind == TileType.FLOOR:
-        draw_floor(screen, x, y, col, row, seed)
-        draw_shadow(screen, x, y, col, row, game_map)
+        # B8: 特殊房间地板着色
+        sr = game_map.get_special_room_at(col, row)
+        if sr:
+            from src.world.special_room import SpecialRoomType
+            if sr.type == SpecialRoomType.ALTAR:
+                base = (50, 35, 15)
+            elif sr.type == SpecialRoomType.TREASURE:
+                base = (25, 35, 60)
+            else:  # FOUNTAIN
+                base = (20, 45, 25)
+            if sr.triggered:
+                base = tuple(int(c * 0.55) for c in base)
+            rect = pygame.Rect(x, y, TS, TS)
+            pygame.draw.rect(screen, base, rect)
+            pygame.draw.rect(screen, (35, 35, 45), rect, 1)
+            # 房间中心绘制图标
+            if col == sr.cx and row == sr.cy:
+                from src.world.special_room import SpecialRoomType
+                if sr.type == SpecialRoomType.ALTAR:
+                    icon = "+"
+                elif sr.type == SpecialRoomType.TREASURE:
+                    icon = "$"
+                else:
+                    icon = "~"
+                ic = (100, 100, 100) if sr.triggered else (255, 255, 200)
+                # 使用简单字体绘制图标
+                font = _get_icon_font()
+                if font:
+                    text = font.render(icon, True, ic)
+                    screen.blit(text, (x + 10, y + 5))
+        else:
+            draw_floor(screen, x, y, col, row, seed)
+            draw_shadow(screen, x, y, col, row, game_map)
     else:
         pygame.draw.rect(screen, (80, 40, 40), (x, y, TS, TS))
         pygame.draw.rect(screen, (60, 30, 30), (x, y, TS, TS), 1)
         return
+
+
+_icon_font = None
+
+
+def _get_icon_font():
+    """懒加载图标字体。"""
+    global _icon_font
+    if _icon_font is None:
+        try:
+            _icon_font = pygame.font.Font("C:/Windows/Fonts/simhei.ttf", 20)
+        except Exception:
+            try:
+                _icon_font = pygame.font.Font(None, 20)
+            except Exception:
+                return None
+    return _icon_font

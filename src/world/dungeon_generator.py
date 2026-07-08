@@ -20,6 +20,7 @@ BSP 地牢生成器 —— 程序化生成房间 + 走廊
 
 import random
 from src.world.game_map import GameMap
+from src.world.special_room import SpecialRoom, special_room_from_index
 from config import (MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
                      DUNGEON_MIN_PARTITION, DUNGEON_MIN_ROOM,
                      DUNGEON_ROOM_MARGIN, DUNGEON_CORRIDOR_MIN,
@@ -102,19 +103,30 @@ class DungeonGenerator:
         self.room_margin = room_margin
         self._root: BSPNode | None = None
         self._rooms: list[tuple[int, int, int, int]] = []
+        self._special_rooms: list[SpecialRoom] = []   # B8: 特殊房间列表
+        self._rng: random.Random | None = None        # B8: seed 驱动本地随机
 
     # =========================================================
     #  公共接口
     # =========================================================
 
-    def generate(self) -> GameMap:
+    def generate(self, seed: int = 0) -> GameMap:
         """执行完整生成流程 → 返回可用的 GameMap。
+
+        seed=0: 使用全局 random（随机体验）。
+        seed!=0: 使用本地 Random(seed)，同 seed 同地图（B8）。
 
         返回：
             生成好的 GameMap 实例（墙壁 + 地板 + L形走廊）。
         """
         self._rooms = []
         self._corridors: list[tuple[int, int, int, int]] = []
+        self._special_rooms = []
+        if seed != 0:
+            self._rng = random.Random(seed)
+        else:
+            self._rng = None
+
         # 1. 构建 BSP 树
         self._root = BSPNode(0, 0, self.width, self.height)
         self._partition(self._root)
@@ -126,6 +138,9 @@ class DungeonGenerator:
         game_map = GameMap(self.width, self.height, self.tile_size)
         template = self._build_template()
         game_map.load_from_template(template)
+        # 5. B8: 分配特殊房间
+        self._assign_special_rooms()
+        game_map.special_rooms = self._special_rooms
         return game_map
 
     def get_room_centers(self) -> list[tuple[int, int]]:
@@ -143,6 +158,59 @@ class DungeonGenerator:
             centers.append((rx + rw // 2, ry + rh // 2))
         return centers
 
+    def get_special_rooms(self) -> list[SpecialRoom]:
+        """返回特殊房间列表 (B8)。"""
+        return self._special_rooms
+
+    # =========================================================
+    #  Seed 驱动随机 (B8)
+    # =========================================================
+
+    def _randint(self, a: int, b: int) -> int:
+        """seed≠0 时走本地 rng，否则走全局 random。"""
+        if self._rng is not None:
+            return self._rng.randint(a, b)
+        return random.randint(a, b)
+
+    def _randchoice(self, seq):
+        """seed≠0 时走本地 rng，否则走全局 random。"""
+        if self._rng is not None:
+            return self._rng.choice(seq)
+        return random.choice(seq)
+
+    def _randrandom(self) -> float:
+        """seed≠0 时走本地 rng，否则走全局 random.random。"""
+        if self._rng is not None:
+            return self._rng.random()
+        return random.random()
+
+    # =========================================================
+    #  特殊房间分配 (B8)
+    # =========================================================
+
+    def _assign_special_rooms(self):
+        """从 _rooms 中挑选 2~3 个作为特殊房间，排除玩家房和楼梯房。"""
+        if len(self._rooms) < 4:
+            return
+
+        # 排除 rooms[0] (玩家) 和 rooms[-1] (楼梯)
+        candidates = list(range(1, len(self._rooms) - 1))
+        # Fisher-Yates shuffle
+        for i in range(len(candidates) - 1, 0, -1):
+            j = self._randint(0, i)
+            candidates[i], candidates[j] = candidates[j], candidates[i]
+
+        count = min(3, len(candidates))
+        for i in range(count):
+            rx, ry, rw, rh = self._rooms[candidates[i]]
+            sr = SpecialRoom(
+                cx=rx + rw // 2,
+                cy=ry + rh // 2,
+                rx=rx, ry=ry, rw=rw, rh=rh,
+                room_type=special_room_from_index(i),
+            )
+            self._special_rooms.append(sr)
+
     # =========================================================
     #  核心算法
     # =========================================================
@@ -159,7 +227,7 @@ class DungeonGenerator:
         elif node.h > node.w:
             split_axis_is_vertical = False
         else:
-            split_axis_is_vertical = random.choice([True, False])
+            split_axis_is_vertical = self._randchoice([True, False])
 
         # 计算可用切分范围，空间不足则停止
         region_size = node.w if split_axis_is_vertical else node.h
@@ -168,7 +236,7 @@ class DungeonGenerator:
 
         split_min = self.min_partition
         split_max = region_size - self.min_partition
-        split_pos = random.randint(split_min, split_max)
+        split_pos = self._randint(split_min, split_max)
 
         self._create_child_nodes(node, split_axis_is_vertical, split_pos)
         self._partition(node.left)
@@ -206,10 +274,10 @@ class DungeonGenerator:
                 self._create_rooms(node.right)
             return
         # 叶子节点：在区域内随机一个房间
-        room_w = random.randint(self.min_room, max(self.min_room + 1, node.w - 2 * self.room_margin))
-        room_h = random.randint(self.min_room, max(self.min_room + 1, node.h - 2 * self.room_margin))
-        room_x = node.x + random.randint(self.room_margin, max(self.room_margin, node.w - room_w - self.room_margin))
-        room_y = node.y + random.randint(self.room_margin, max(self.room_margin, node.h - room_h - self.room_margin))
+        room_w = self._randint(self.min_room, max(self.min_room + 1, node.w - 2 * self.room_margin))
+        room_h = self._randint(self.min_room, max(self.min_room + 1, node.h - 2 * self.room_margin))
+        room_x = node.x + self._randint(self.room_margin, max(self.room_margin, node.w - room_w - self.room_margin))
+        room_y = node.y + self._randint(self.room_margin, max(self.room_margin, node.h - room_h - self.room_margin))
         node.room = (room_x, room_y, room_w, room_h)
         self._rooms.append(node.room)
 
@@ -254,7 +322,7 @@ class DungeonGenerator:
         children = [n for n in (node.left, node.right) if n is not None]
         if not children:
             return None
-        return self._pick_room(random.choice(children))
+        return self._pick_room(self._randchoice(children))
 
     # =========================================================
     #  走廊绘制
@@ -302,8 +370,8 @@ class DungeonGenerator:
             x1, y1: 起点坐标。
             x2, y2: 终点坐标。
         """
-        width = random.randint(DUNGEON_CORRIDOR_MIN, DUNGEON_CORRIDOR_MAX)
-        if random.random() < 0.5:
+        width = self._randint(DUNGEON_CORRIDOR_MIN, DUNGEON_CORRIDOR_MAX)
+        if self._randrandom() < 0.5:
             self._carve_line(grid, x1, y1, x2, y1, width)       # 水平段
             self._carve_line(grid, x2, y1, x2, y2, width)       # 垂直段
         else:
