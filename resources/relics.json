@@ -1,0 +1,13 @@
+[
+  {"id":"blood_charm","name":"血纹护符","short_name":"血","desc":"最大生命+20","rarity":"common","param":20,"hud_color":[200,60,60]},
+  {"id":"venom_fang","name":"毒牙","short_name":"毒","desc":"中毒每跳伤害+1","rarity":"common","param":1,"hud_color":[100,220,80]},
+  {"id":"golden_dice","name":"金色骰子","short_name":"骰","desc":"宝箱额外多给一件物品","rarity":"rare","param":0,"hud_color":[255,200,50]},
+  {"id":"hunters_eye","name":"猎人之眼","short_name":"眼","desc":"移速+10%","rarity":"common","param":0.1,"hud_color":[120,180,255]},
+  {"id":"leech_blade","name":"吸血之刃","short_name":"吸","desc":"击杀怪物时20%概率恢复5HP","rarity":"common","param":0.2,"param2":5,"hud_color":[200,40,180]},
+  {"id":"war_drum","name":"战鼓","short_name":"鼓","desc":"攻击力提升15%","rarity":"common","param":0.15,"hud_color":[200,60,60]},
+  {"id":"battle_totem","name":"战斗图腾","short_name":"战","desc":"击杀怪物时15%概率获得1层攻击强化","rarity":"common","param":0.15,"hud_color":[200,120,40]},
+  {"id":"iron_heart","name":"铁之心","short_name":"铁","desc":"最大生命+10","rarity":"common","param":10,"hud_color":[160,160,180]},
+  {"id":"sage_leaf","name":"贤者之叶","short_name":"叶","desc":"祭坛与泉水的治疗额外+10","rarity":"rare","param":10,"hud_color":[80,200,120]},
+  {"id":"merchant_coin","name":"商人硬币","short_name":"币","desc":"宝箱中的圣物掉率提高15%并额外1件物品","rarity":"rare","param":0.15,"hud_color":[255,200,50]},
+  {"id":"plague_mask","name":"瘟疫面具","short_name":"瘟","desc":"中毒对你造成的每次伤害减少1点","rarity":"epic","param":1,"hud_color":[180,60,200]}
+]

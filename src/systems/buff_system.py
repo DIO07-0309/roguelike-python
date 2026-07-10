@@ -151,11 +151,14 @@ def apply_buff(entity, bid: str, stacks: int = 1):
 
 # ---- Tick ----
 def tick_buffs(entity, dt: float):
+    """逐帧结算 buff (B11/B12: 接入 venom_fang / plague_mask)。"""
     if not entity or not hasattr(entity, "active_buffs"):
         return
     c = getattr(entity, "combat", None)
     if not c or not c.is_alive:
         return
+    from src.systems.relic_system import player_has_relic
+    is_player = hasattr(entity, "inventory")  # heuristic: Player vs Monster
     i = 0
     while i < len(entity.active_buffs):
         b = entity.active_buffs[i]
@@ -165,7 +168,13 @@ def tick_buffs(entity, dt: float):
         if d and d.tick_interval > 0 and c.is_alive:
             b.tick_timer -= dt
             while b.tick_timer <= 0 and b.remaining > 0 and c.is_alive:
-                c.take_damage(d.tick_damage * b.stacks)
+                dmg = d.tick_damage * b.stacks
+                if b.id == "poison":
+                    if not is_player:          # B11: venom_fang — monster poison +1
+                        dmg += 1  # (approximate: all monster poison is from player)
+                    elif player_has_relic(entity, "plague_mask"):  # B12: plague_mask — player poison -1
+                        dmg = max(0, dmg - 1)
+                c.take_damage(dmg)
                 b.tick_timer += d.tick_interval
                 if not c.is_alive:
                     break
@@ -187,13 +196,35 @@ def get_effective_attack(entity) -> int:
         return 1
     base = entity.combat.get_effective_attack()
     stacks = _count_stacks(getattr(entity, "active_buffs", []), "attack_up")
-    return max(1, int(base * (1.0 + 0.3 * stacks)))
+    atk = int(base * (1.0 + 0.3 * stacks))
+    # B12: war_drum — 攻击力 +15%
+    from src.systems.relic_system import player_has_relic
+    if player_has_relic(entity, "war_drum"):
+        atk = int(atk * 1.15)
+    return max(1, atk)
 
 def get_effective_speed(entity, base_speed: float = 200.0) -> float:
     if not entity or not hasattr(entity, "active_buffs"):
         return base_speed
     stacks = _count_stacks(entity.active_buffs, "slow")
-    return base_speed * (0.7 ** stacks)
+    speed = base_speed * (0.7 ** stacks)
+    # B11: hunters_eye — 移速 +10%
+    from src.systems.relic_system import player_has_relic
+    if player_has_relic(entity, "hunters_eye"):
+        speed *= 1.10
+    return speed
+
+# B11/B12: 有效最大生命 (blood_charm +20, iron_heart +10)
+def get_effective_max_hp(entity) -> int:
+    if not entity or not hasattr(entity, "combat"):
+        return 0
+    hp = entity.combat.max_hp
+    from src.systems.relic_system import player_has_relic
+    if player_has_relic(entity, "blood_charm"):
+        hp += 20
+    if player_has_relic(entity, "iron_heart"):
+        hp += 10
+    return hp
 
 
 # ---- Triggers ----

@@ -44,6 +44,10 @@ from src.fx_engine import (player_attack_fx, slash_skill_fx, fireball_fx,
 from src.sfx_engine import play_sfx
 from src.bgm_engine import (play_dungeon_bgm, play_boss_bgm, stop_bgm,
                              init_bgm)
+from src.systems.relic_system import (get_relic_def, get_relic_short_name,
+                                       get_relic_display_name, get_relic_hud_color,
+                                       player_has_relic, get_all_relic_ids,
+                                       try_grant_random_relic)
 
 
 class GameScene(Scene):
@@ -54,6 +58,8 @@ class GameScene(Scene):
         self._state = "playing"   # playing | boss_intro | boss_cinematic
         self._room_message = ""                # B10: 临时消息文字
         self._room_message_timer = 0.0         # B10: 消息剩余显示秒数
+        self._show_relic_panel = False         # B12: R 面板开关
+        self._shown_relic_hint = False         # B12.5: 首次 relic 提示
 
     # ═══════════════════════════════════════════════════════════
     #  生命周期
@@ -328,6 +334,8 @@ class GameScene(Scene):
                     self._handle_pickup()
             else:
                 self._handle_pickup()
+        elif key == pygame.K_r:
+            self._show_relic_panel = not self._show_relic_panel
         elif key == pygame.K_i:
             eng.inventory_open = True
             eng.inventory_cursor = 0
@@ -342,8 +350,9 @@ class GameScene(Scene):
         if eng.player and eng.player.combat.is_alive:
             eng._max_unlocked_floor = max(eng._max_unlocked_floor, eng.current_floor)
             spr, spd = self._collect_special_state()
+            rlc = [r.id for r in getattr(eng.player, 'relics', [])]
             save_game(eng.player, eng.current_floor, eng._max_unlocked_floor,
-                      getattr(eng, '_dungeon_seed', 0), spr, spd)
+                      getattr(eng, '_dungeon_seed', 0), spr, spd, rlc)
         eng.change_scene(TitleScene(eng))
 
     # ═══════════════════════════════════════════════════════════
@@ -505,10 +514,25 @@ class GameScene(Scene):
         if eng.player and eng.player.give_xp(xp_gained):
             play_sfx("levelup")
         if random.random() > LOOT_DROP_CHANCE:
-            return
-        tx, ty = eng.game_map.pixel_to_tile(
-            monster.entity.position.x, monster.entity.position.y)
-        eng.ground_items.append(DroppedItem(generate_random_item(), tx, ty))
+            pass  # always fall through to relic checks
+        else:
+            tx, ty = eng.game_map.pixel_to_tile(
+                monster.entity.position.x, monster.entity.position.y)
+            eng.ground_items.append(DroppedItem(generate_random_item(), tx, ty))
+        # B11: leech_blade — 20% 回 5 HP
+        if eng.player and player_has_relic(eng.player, "leech_blade"):
+            d = get_relic_def("leech_blade")
+            chance = d.param if d else 0.2
+            heal = d.param2 if d else 5
+            if random.random() < chance:
+                eng.player.combat.heal(heal)
+        # B12: battle_totem — 15% 获得 attack_up
+        if eng.player and player_has_relic(eng.player, "battle_totem"):
+            d = get_relic_def("battle_totem")
+            chance = d.param if d else 0.15
+            if random.random() < chance:
+                from src.systems.buff_system import apply_buff
+                apply_buff(eng.player, "attack_up", 1)
 
     def _drop_boss_reward(self, monster: Monster):
         """Boss击杀奖励 — 传说武器 + 护符 + 药水 + 技能。"""
@@ -572,8 +596,9 @@ class GameScene(Scene):
         eng._max_unlocked_floor = max(eng._max_unlocked_floor, eng.current_floor)
         from saves.save_manager import save_game
         spr, spd = self._collect_special_state()
+        rlc = [r.id for r in getattr(eng.player, 'relics', [])]
         save_game(eng.player, eng.current_floor, eng._max_unlocked_floor,
-                  getattr(eng, '_dungeon_seed', 0), spr, spd)
+                  getattr(eng, '_dungeon_seed', 0), spr, spd, rlc)
 
     def _check_floor_transition(self):
         """检测玩家是否站在激活楼梯上按 > 键。"""
@@ -633,6 +658,11 @@ class GameScene(Scene):
         msg = execute_special_room(room.type, eng.player)
         room.triggered = True
         self._show_room_message(msg)
+        # B12.5: 首次获得 relic 时提示按 R
+        if (not self._shown_relic_hint and eng.player
+                and getattr(eng.player, 'relics', [])):
+            self._shown_relic_hint = True
+            self._show_room_message("按 R 可查看圣物面板")
 
     def _check_special_room_discovery(self):
         """每帧检测玩家是否首次步入特殊房间 (B10)。"""
@@ -709,6 +739,15 @@ class GameScene(Scene):
             eng.screen.blit(s, (bar_x, bar_y + bar_h + 28))
         self._render_skill_bar(bar_x, bar_y + bar_h + 50)
         self._draw_player_buffs()
+        # B11: 玩家 Relic HUD
+        self._draw_player_relics()
+        # B12: R 面板
+        if self._show_relic_panel:
+            self._draw_relic_panel()
+        # B12.5: 快捷键提示 (右下角)
+        hint = get_font(12).render("[R]圣物  [I]背包  [ESC]保存", True, (140, 140, 160))
+        eng.screen.blit(hint, (eng.screen.get_width() - hint.get_width() - 14,
+                                eng.screen.get_height() - 26))
         # B10: 房间消息条
         self._draw_room_message(eng.screen)
 
@@ -795,6 +834,56 @@ class GameScene(Scene):
             surf = get_font(14).render(line, True, get_buff_hud_color(b.id))
             eng.screen.blit(surf, (x, y))
             y += 18
+
+    # B11/B12: Relic HUD + R 面板
+    def _draw_player_relics(self):
+        eng = self.engine
+        if not eng.player or not getattr(eng.player, 'relics', []):
+            return
+        x, y = 10, 56 + len(eng.player.skills.active_skills) * 28 + 4
+        if eng.player.active_buffs:
+            y += len(eng.player.active_buffs) * 18 + 4
+        font = get_font(13)
+        label = font.render("圣物:", True, (255, 220, 100))
+        eng.screen.blit(label, (x, y))
+        cx = x + label.get_width() + 4
+        for r in eng.player.relics:
+            d = get_relic_def(r.id)
+            if not d: continue
+            rc = (100, 170, 255) if d.rarity == "rare" else (190, 100, 255) if d.rarity == "epic" else (255, 220, 100)
+            token = font.render(d.short_name + " ", True, rc)
+            eng.screen.blit(token, (cx, y))
+            cx += token.get_width()
+
+    def _draw_relic_panel(self):
+        eng = self.engine
+        if not eng.player: return
+        sw, sh = eng.screen.get_width(), eng.screen.get_height()
+        panel_w, panel_x = 370, sw - 390
+        panel_y = 70
+        relics = getattr(eng.player, 'relics', [])
+        line_h = 24
+        panel_h = 56 + (len(relics) if relics else 1) * line_h
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        pygame.draw.rect(eng.screen, (15, 15, 35), panel_rect, border_radius=8)
+        pygame.draw.rect(eng.screen, (100, 100, 160), panel_rect, width=2, border_radius=8)
+        eng.screen.set_clip(None)
+        title = get_font(18).render("圣物图鉴", True, (255, 255, 200))
+        eng.screen.blit(title, (panel_x + 14, panel_y + 10))
+        if not relics:
+            txt = get_font(14).render("尚未获得任何圣物。", True, (160, 160, 180))
+            eng.screen.blit(txt, (panel_x + 14, panel_y + 38))
+            return
+        ly = panel_y + 40
+        for r in relics:
+            d = get_relic_def(r.id)
+            if not d: continue
+            rarity_cn = "稀有" if d.rarity == "rare" else "史诗" if d.rarity == "epic" else "普通"
+            rc = (100, 170, 255) if d.rarity == "rare" else (190, 100, 255) if d.rarity == "epic" else (255, 220, 100)
+            line = f"[{rarity_cn}] {d.name} - {d.desc}"
+            txt = get_font(14).render(line, True, rc)
+            eng.screen.blit(txt, (panel_x + 14, ly))
+            ly += line_h
 
     def _draw_monster_buffs(self, monster, cam_x, cam_y):
         """怪物头顶 Buff 简写标签。"""

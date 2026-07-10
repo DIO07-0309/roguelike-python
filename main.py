@@ -54,6 +54,8 @@ def main():
     init_bgm()
     init_sfx()
     load_buff_defs("resources/buffs.json")
+    from src.systems.relic_system import load_relic_defs
+    load_relic_defs("resources/relics.json")
 
     engine = GameEngine(screen, clock)
     from src.scenes.title_scene import TitleScene

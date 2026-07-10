@@ -235,7 +235,8 @@ def save_game(player, current_floor: int,
               max_unlocked_floor: int,
               dungeon_seed: int = 0,
               special_triggered: list = None,
-              special_discovered: list = None) -> bool:
+              special_discovered: list = None,
+              relics: list = None) -> bool:
     """保存游戏进度到 JSON。
 
     参数：
@@ -256,6 +257,7 @@ def save_game(player, current_floor: int,
         "dungeon_seed": dungeon_seed,
         "special_triggered": special_triggered or [],
         "special_discovered": special_discovered or [],
+        "relics": relics or [],
     }
     try:
         os.makedirs(SAVE_DIR, exist_ok=True)
@@ -285,6 +287,7 @@ def load_save() -> dict | None:
             "dungeon_seed": data.get("dungeon_seed", 0),
             "special_triggered": data.get("special_triggered", []),
             "special_discovered": data.get("special_discovered", []),
+            "relics": data.get("relics", []),
         }
     except Exception:
         return None

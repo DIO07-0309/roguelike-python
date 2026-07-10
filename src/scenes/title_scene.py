@@ -40,6 +40,9 @@ class TitleScene(Scene):
         draw_panel(screen, pr, title="选 单")
         self._draw_menu(pr)
 
+        # B12.5: 操作说明 (右侧面板)
+        self._draw_controls_guide(sw)
+
         # 底部信息
         cr = get_font(12).render(
             "重庆大学大数据与软件学院 · 程序设计实训", True, (80, 80, 80))
@@ -82,6 +85,31 @@ class TitleScene(Scene):
             self._enter_tutorial()
         elif key == pygame.K_ESCAPE:
             self.engine.is_running = False
+
+    # ── B12.5: 操作说明 ─────────────────────────────────────
+
+    def _draw_controls_guide(self, sw: int):
+        screen = self.engine.screen
+        guide_x = sw - 240
+        guide_y = 180
+        guide_w = 220
+        guide_h = 158
+        pygame.draw.rect(screen, (15, 15, 30), (guide_x, guide_y, guide_w, guide_h),
+                         border_radius=6)
+        pygame.draw.rect(screen, (70, 70, 100), (guide_x, guide_y, guide_w, guide_h),
+                         width=1, border_radius=6)
+        lines = [
+            ("操作说明", (255, 210, 80)),
+            ("WASD/方向键 - 移动", (180, 180, 200)),
+            ("J - 攻击   K - 技能", (180, 180, 200)),
+            ("E - 交互   I - 背包", (180, 180, 200)),
+            ("R - 查看圣物", (180, 180, 200)),
+            ("ESC - 保存并返回", (180, 180, 200)),
+        ]
+        for i, (text, color) in enumerate(lines):
+            font = get_font(16) if i == 0 else get_font(14)
+            s = font.render(text, True, color)
+            screen.blit(s, (guide_x + 12, guide_y + 8 + i * 23))
 
     # ── 场景跳转 ──────────────────────────────────────────
 
@@ -126,6 +154,14 @@ class TitleScene(Scene):
             n = min(len(rooms), len(spd))
             for i in range(n):
                 rooms[i].discovered = spd[i]
+        # B11: 恢复 relic
+        rlc = saved.get("relics", [])
+        if rlc and eng.player:
+            from src.systems.relic_system import RelicInstance, get_relic_def
+            eng.player.relics = []
+            for rid in rlc:
+                if get_relic_def(rid):
+                    eng.player.relics.append(RelicInstance(id=rid))
         eng.change_scene(game)
 
     def _enter_floor_select(self):

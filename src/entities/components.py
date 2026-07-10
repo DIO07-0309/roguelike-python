@@ -14,13 +14,20 @@
 """
 
 from enum import Enum
+from dataclasses import dataclass
 
 
 class AttackType(Enum):
     """攻击伤害类型枚举。"""
-    PHYSICAL = "physical"       # 物理伤害 — 受物理防御减免
-    MAGICAL = "magical"         # 魔法伤害 — 受魔法防御减免
-    TRUE = "true"               # 真实伤害 — 无视所有防御
+    PHYSICAL = "physical"
+    MAGICAL = "magical"
+    TRUE = "true"
+
+
+# B11: RelicInstance — 局内圣物 (挂在 Player 上)
+@dataclass
+class RelicInstance:
+    id: str = ""
 
 
 class CombatStats:

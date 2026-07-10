@@ -73,6 +73,8 @@ class Player:
         self.attack_type = AttackType.PHYSICAL
         # Buff 系统
         self.active_buffs = []
+        # B11: Relic 系统
+        self.relics = []
         # 背包系统
         self.inventory = Inventory(inv_capacity)
         # 技能系统

@@ -68,6 +68,10 @@ def _altar_attack_up(player):
 
 def _altar_heal(player):
     amount = max(1, player.combat.max_hp * 3 // 10)
+    # B12: sage_leaf — 祭坛治疗 +10
+    from src.systems.relic_system import player_has_relic
+    if player_has_relic(player, "sage_leaf"):
+        amount += 10
     player.combat.heal(amount)
     return "祭坛赐福：你的伤势恢复了。"
 
@@ -98,37 +102,64 @@ def _exec_altar(player):
 def _exec_treasure(player):
     from src.entities.item import generate_random_item
     from src.systems.buff_system import apply_buff
+    from src.systems.relic_system import player_has_relic, try_grant_random_relic
 
     roll = random.randint(0, 99)
+    msg = ""
+
     if roll < 10:
-        # 祝福宝箱 (10%)
         item = generate_random_item()
         if item:
             player.inventory.add(item, player)
         apply_buff(player, "attack_up", 1)
-        return "宝箱中的力量流入了你的身体。"
+        msg = "宝箱中的力量流入了你的身体。"
     elif roll < 40:
-        # 丰厚宝箱 (30%)
         a = generate_random_item()
         b = generate_random_item()
-        if a:
-            player.inventory.add(a, player)
-        if b:
-            player.inventory.add(b, player)
-        return "你打开了宝箱，里面装着两件战利品！"
+        if a: player.inventory.add(a, player)
+        if b: player.inventory.add(b, player)
+        msg = "你打开了宝箱，里面装着两件战利品！"
     else:
-        # 普通宝箱 (60%)
         item = generate_random_item()
         if not item:
-            return "宝箱里空空如也。"
-        player.inventory.add(item, player)
-        return "你打开了宝箱，获得了战利品。"
+            msg = "宝箱里空空如也。"
+        else:
+            player.inventory.add(item, player)
+            msg = "你打开了宝箱，获得了战利品。"
+
+    # B12: 宝箱品质分级 relic 掉率 (普通10% / 丰厚20% / 祝福35%)
+    relic_chance = 0.35 if roll < 10 else 0.20 if roll < 40 else 0.10
+    if player_has_relic(player, "merchant_coin"):
+        relic_chance = min(0.95, relic_chance + 0.15)
+    relic_msg = try_grant_random_relic(player, relic_chance)
+    if relic_msg:
+        msg += " " + relic_msg
+
+    # B11: golden_dice — 额外物品
+    if player_has_relic(player, "golden_dice"):
+        extra = generate_random_item()
+        if extra and player.inventory.add(extra, player):
+            msg += " 金色骰子额外赐予了一件物品。"
+
+    # B12: merchant_coin — 额外物品 (与 golden_dice 叠加)
+    if player_has_relic(player, "merchant_coin"):
+        extra = generate_random_item()
+        if extra and player.inventory.add(extra, player):
+            msg += " 商人硬币额外带来了一件物品。"
+
+    return msg
 
 
 # ---------- B9.3 泉水: 回满 + 净化 ----------
 
 def _exec_fountain(player):
     missing = player.combat.max_hp - player.combat.current_hp
+    if missing < 0:
+        missing = 0
+    # B12: sage_leaf — 泉水治疗 +10
+    from src.systems.relic_system import player_has_relic
+    if player_has_relic(player, "sage_leaf"):
+        missing += 10
     if missing > 0:
         player.combat.heal(missing)
     _cleanse_debuffs(player)
