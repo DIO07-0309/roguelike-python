@@ -9,13 +9,14 @@ import math
 import time
 import random
 import pygame
-from config import (TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, MAX_FLOORS, BOSS_FLOORS,
+from config import (TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, MAX_FLOORS,
                      COLOR_BLACK, COLOR_WHITE, COLOR_RED, COLOR_GREEN,
                      COLOR_YELLOW, COLOR_GRAY, COLOR_BLUE,
                      PLAYER_ATTACK_RANGE, PICKUP_RANGE,
-                     LOOT_DROP_CHANCE, XP_PER_KILL_BASE, XP_PER_KILL_BOSS,
-                     FLOOR_MONSTER_HP_MULT, FLOOR_MONSTER_ATK_MULT,
-                     FLOOR_MONSTER_COUNT)
+                     LOOT_DROP_CHANCE, XP_PER_KILL_BASE, XP_PER_KILL_BOSS)
+from src.game.floor_config import (get_floor_config, get_floor_narrative,
+                                     get_chapter_title, get_chapter_subtitle,
+                                     get_chapter_for_floor)
 from src.core.scene import Scene
 from game import get_font
 from src.ui_helpers import (draw_panel, draw_glow_text, draw_progress_bar,
@@ -48,6 +49,7 @@ from src.systems.relic_system import (get_relic_def, get_relic_short_name,
                                        get_relic_display_name, get_relic_hud_color,
                                        player_has_relic, get_all_relic_ids,
                                        try_grant_random_relic)
+from src.systems.relic_archive import g_relic_archive
 
 
 class GameScene(Scene):
@@ -56,10 +58,18 @@ class GameScene(Scene):
     def __init__(self, engine):
         super().__init__(engine)
         self._state = "playing"   # playing | boss_intro | boss_cinematic
-        self._room_message = ""                # B10: 临时消息文字
-        self._room_message_timer = 0.0         # B10: 消息剩余显示秒数
         self._show_relic_panel = False         # B12: R 面板开关
         self._shown_relic_hint = False         # B12.5: 首次 relic 提示
+        # D0: 四个 Director (纯骨架，不影响现有行为)
+        from src.directors.boss_system_director import BossSystemDirector
+        from src.directors.gameplay_system_director import GameplaySystemDirector
+        from src.directors.presentation_system_director import PresentationSystemDirector
+        from src.directors.game_flow_director import GameFlowDirector
+        self.boss_sys = BossSystemDirector()
+        self.gameplay = GameplaySystemDirector()
+        self.presentation = PresentationSystemDirector()
+        self.flow = GameFlowDirector()
+        self.flow.bind(self)
 
     # ═══════════════════════════════════════════════════════════
     #  生命周期
@@ -75,6 +85,25 @@ class GameScene(Scene):
             self._update_playing(delta_time)
 
         self._decay_effects(delta_time)
+
+        # D0: Director 逐帧生命周期
+        self.presentation.tick(delta_time)
+        self.gameplay.tick(delta_time)
+        self.boss_sys.tick(delta_time)
+
+        # D1: 随机旁白 (非Boss层, 非事件, 非背包, playing状态)
+        fcfg = get_floor_config(self.engine.current_floor)
+        if not fcfg.is_boss:
+            nar = self.gameplay.tick_narration(
+                self.engine.current_floor, fcfg.is_boss,
+                False, self.engine.inventory_open, self._state)
+            if nar:
+                self.presentation.show_message(nar, 3.0)
+
+        # D3: 构筑变化检测
+        bmsg = self.gameplay.check_build_change(self.engine.player)
+        if bmsg:
+            self.presentation.show_message(bmsg, 2.0)
 
     def _decay_effects(self, delta_time: float):
         """衰减所有活跃攻击特效 + 时停倒计时。"""
@@ -107,6 +136,8 @@ class GameScene(Scene):
         seed=0: 随机生成; seed!=0: 读档恢复 (B8)。
         """
         eng = self.engine
+        fcfg = get_floor_config(floor_num)  # D1: 统一配置
+
         eng.current_floor = floor_num
         eng._game_time = 0.0
         eng.ground_items = []
@@ -116,8 +147,8 @@ class GameScene(Scene):
         eng._attack_effects = []
         eng._time_stop_remaining = 0.0
         eng._pending_damage = []
-        self._room_message = ""
-        self._room_message_timer = 0.0
+        self.presentation.room_msg = ""
+        self.presentation.room_msg_timer = 0.0
 
         # B8: seed=0 → 随机, seed!=0 → 读档恢复
         if seed != 0:
@@ -130,21 +161,19 @@ class GameScene(Scene):
         room_centers = generator.get_room_centers()
         self._place_player_in_room(room_centers)
 
-        idx = min(floor_num - 1, 14)
-        n = FLOOR_MONSTER_COUNT[idx]
-        is_boss = floor_num in BOSS_FLOORS
-        if is_boss:
+        if fcfg.is_boss:
             eng.monsters = []
         else:
             other = room_centers[1:] if len(room_centers) > 1 else []
-            eng.monsters = self._spawn_monsters_scaled(other, n, floor_num)
+            eng.monsters = self._spawn_monsters_scaled(
+                other, fcfg.monster_count, fcfg.hp_mult, fcfg.atk_mult)
 
         eng.stairs_pos = (room_centers[-1] if room_centers
                            else (MAP_WIDTH // 2, MAP_HEIGHT // 2))
         eng.player.combat.current_hp = eng.player.combat.max_hp
         eng.player.reset_attack_timers()
 
-        if is_boss:
+        if fcfg.is_boss:
             eng._boss_intro_data = get_boss_info(floor_num)
             self._state = "boss_intro"
             play_boss_bgm()
@@ -152,6 +181,28 @@ class GameScene(Scene):
             self._state = "playing"
             play_dungeon_bgm()
         eng._bgm_stopped_for_title = False
+
+        # D1: 楼层入场演出
+        if not fcfg.is_boss and not self.gameplay.narr_state.floor_intro_played[floor_num - 1]:
+            self.presentation.floor_intro_active = True
+            self.presentation.floor_intro_timer = 2.0
+            self.presentation.floor_intro_fade = 0.0
+            self.presentation.floor_intro_floor = floor_num
+
+        # D1: 章节入场
+        ch = get_chapter_for_floor(floor_num)
+        if not fcfg.is_boss and ch != self.presentation.chapter_intro_ch:
+            self.presentation.chapter_intro_active = True
+            self.presentation.chapter_intro_timer = 3.0
+            self.presentation.chapter_intro_ch = ch
+            self.presentation.floor_intro_active = False
+
+        # D1: 剧情消息 (Boss层由Boss介绍覆盖)
+        if fcfg.story_msg and not self.presentation.floor_intro_active and not self.presentation.chapter_intro_active:
+            self.presentation.room_msg = fcfg.story_msg
+            self.presentation.room_msg_timer = 3.0
+
+        self.gameplay.on_enter_floor(floor_num)  # D0: 生命周期
 
     def _place_player_in_room(self, room_centers: list):
         """玩家置于第一个房间中心。"""
@@ -162,13 +213,11 @@ class GameScene(Scene):
         eng.player.entity.sync_rect()
 
     def _spawn_monsters_scaled(self, room_centers: list,
-                                 count: int, floor: int) -> list:
-        """按楼层难度缩放生成怪物。"""
+                                 count: int, hp_mult: float, atk_mult: float) -> list:
+        """按楼层难度缩放生成怪物 (D1: 参数来自 FloorConfig)。"""
         eng = self.engine
         if not room_centers:
             return []
-        hp_mult = FLOOR_MONSTER_HP_MULT[min(floor - 1, 14)]
-        atk_mult = FLOOR_MONSTER_ATK_MULT[min(floor - 1, 14)]
         spawned = []
         room_index = 0
         while len(spawned) < count and room_index < 500:
@@ -222,9 +271,7 @@ class GameScene(Scene):
         eng.player.update(delta_time)
         self._tick_skill_regen(delta_time)
         self._tick_buff_system(delta_time)
-        # B10: 房间消息计时器
-        if self._room_message_timer > 0:
-            self._room_message_timer -= delta_time
+        # B10: 消息计时器由 PresentationDirector 管理
         if not eng.stairs_active and self._all_monsters_dead():
             self._activate_stairs()
 
@@ -266,6 +313,11 @@ class GameScene(Scene):
 
     def _on_player_death(self):
         """玩家死亡 → 切到死亡场景。"""
+        self.gameplay.on_player_dead(   # D0: 生命周期
+            self.engine.current_floor,
+            self.engine.player.level if self.engine.player else 1,
+            self.engine.player)
+        self.flow.on_player_dead()      # D0: 生命周期
         from src.scenes.death_scene import DeathScene
         stop_bgm()
         self.engine._bgm_stopped_for_title = True
@@ -302,7 +354,55 @@ class GameScene(Scene):
             self._render_inventory_panel()
         if eng._time_stop_remaining > 0:
             self._render_time_stop_overlay()
+        self._render_intro_overlay()          # D1: 章节/楼层入场演出 (最顶层)
         pygame.display.flip()
+
+    def _render_intro_overlay(self):
+        """D1: 章节入场 / 楼层入场全屏演出。"""
+        p = self.presentation
+        screen = self.engine.screen
+        sw, sh = screen.get_width(), screen.get_height()
+
+        # 章节入场
+        if p.chapter_intro_active:
+            ch = p.chapter_intro_ch
+            a = min(1.0, p.chapter_intro_timer)
+            gold = (255, 200, 50)
+            white = (230, 230, 240)
+            dark = pygame.Surface((sw, sh))
+            dark.set_alpha(int(150 * a)); dark.fill((0, 0, 0))
+            screen.blit(dark, (0, 0))
+            draw_glow_text(screen, get_chapter_subtitle(ch),
+                           sw // 2, sh // 2 - 45, 36, gold, center=True)
+            draw_glow_text(screen, get_chapter_title(ch),
+                           sw // 2, sh // 2 + 5, 28, white, center=True)
+            fn = get_floor_narrative(p.floor_intro_floor if p.floor_intro_floor > 0
+                                     else self.engine.current_floor)
+            if fn:
+                draw_glow_text(screen, fn.subtitle,
+                               sw // 2, sh // 2 + 45, 18, (180, 180, 200), center=True)
+            return
+
+        # 楼层入场
+        if p.floor_intro_active:
+            fn = get_floor_narrative(p.floor_intro_floor)
+            if fn:
+                a = p.floor_intro_fade
+                gold = (255, 200, 50)
+                white = (230, 230, 240)
+                dark = pygame.Surface((sw, sh))
+                dark.set_alpha(int(120 * a)); dark.fill((0, 0, 0))
+                screen.blit(dark, (0, 0))
+                draw_glow_text(screen, f"Floor {p.floor_intro_floor}",
+                               sw // 2, sh // 2 - 50, 20, gold, center=True)
+                draw_glow_text(screen, "══════════════",
+                               sw // 2, sh // 2 - 28, 18, gold, center=True)
+                draw_glow_text(screen, fn.title,
+                               sw // 2, sh // 2, 28, white, center=True)
+                draw_glow_text(screen, fn.subtitle,
+                               sw // 2, sh // 2 + 35, 16, (180, 180, 200), center=True)
+                draw_glow_text(screen, "══════════════",
+                               sw // 2, sh // 2 + 55, 18, gold, center=True)
 
     # ═══════════════════════════════════════════════════════════
     #  输入处理
@@ -508,6 +608,17 @@ class GameScene(Scene):
         if monster.is_boss:
             if eng.player and eng.player.give_xp(XP_PER_KILL_BOSS):
                 play_sfx("levelup")
+            # D4: WorldState Boss击杀标记
+            floor = eng.current_floor
+            from src.game.world_state import WorldFlag
+            if floor == 5:  self.gameplay.world_state.set(WorldFlag.Boss1_Defeated)
+            if floor == 10: self.gameplay.world_state.set(WorldFlag.Boss2_Defeated)
+            if floor == 15:
+                self.gameplay.world_state.set(WorldFlag.Boss3_Defeated)
+                if (self.gameplay.world_state.has(WorldFlag.Boss1_Defeated)
+                        and self.gameplay.world_state.has(WorldFlag.Boss2_Defeated)):
+                    self.gameplay.world_state.set(WorldFlag.All_Boss_Defeated)
+            self.boss_sys.notify_death()  # D5
             self._drop_boss_reward(monster)
             return
         xp_gained = XP_PER_KILL_BASE + int(monster.combat.max_hp * 0.5)
@@ -614,6 +725,11 @@ class GameScene(Scene):
             return
         next_floor = eng.current_floor + 1
         if next_floor > MAX_FLOORS:
+            self.gameplay.on_game_clear(  # D0: 生命周期
+                eng.current_floor,
+                eng.player.level if eng.player else 1,
+                eng.player)
+            self.flow.on_game_clear()     # D0: 生命周期
             from src.scenes.victory_scene import VictoryScene
             self.engine.change_scene(VictoryScene(self.engine))
         else:
@@ -680,8 +796,8 @@ class GameScene(Scene):
 
     def _show_room_message(self, msg: str):
         """显示临时消息 (2.5秒后自动消失)。"""
-        self._room_message = msg
-        self._room_message_timer = 2.5
+        self.presentation.room_msg = msg
+        self.presentation.room_msg_timer = 2.5
 
     def _collect_special_state(self):
         """收集当前楼层特殊房间 triggered / discovered 状态。"""
@@ -695,14 +811,14 @@ class GameScene(Scene):
 
     def _draw_room_message(self, screen):
         """渲染房间消息条 —— 屏幕底部中央。"""
-        if self._room_message_timer <= 0 or not self._room_message:
+        if self.presentation.room_msg_timer <= 0 or not self.presentation.room_msg:
             return
         sw, sh = screen.get_width(), screen.get_height()
         font = get_font(18)
         if not font:
             return
-        alpha = min(1.0, self._room_message_timer / 0.6)
-        text = font.render(self._room_message, True,
+        alpha = min(1.0, self.presentation.room_msg_timer / 0.6)
+        text = font.render(self.presentation.room_msg, True,
                            (int(255 * alpha), int(255 * alpha),
                             int(200 * alpha)))
         tw = text.get_width()
@@ -863,24 +979,31 @@ class GameScene(Scene):
         panel_y = 70
         relics = getattr(eng.player, 'relics', [])
         line_h = 24
-        panel_h = 56 + (len(relics) if relics else 1) * line_h
+        panel_h = 66 + (len(relics) if relics else 1) * line_h
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
         pygame.draw.rect(eng.screen, (15, 15, 35), panel_rect, border_radius=8)
         pygame.draw.rect(eng.screen, (100, 100, 160), panel_rect, width=2, border_radius=8)
         eng.screen.set_clip(None)
-        title = get_font(18).render("圣物图鉴", True, (255, 255, 200))
+        # M18: 标题含收集率
+        coll = g_relic_archive.collected_count()
+        total = g_relic_archive.total_relic_count()
+        pct = g_relic_archive.collection_pct() * 100.0
+        title = get_font(18).render(f"圣物图鉴  {coll}/{total} ({pct:.0f}%)", True, (255, 255, 200))
         eng.screen.blit(title, (panel_x + 14, panel_y + 10))
         if not relics:
-            txt = get_font(14).render("尚未获得任何圣物。", True, (160, 160, 180))
-            eng.screen.blit(txt, (panel_x + 14, panel_y + 38))
+            txt = get_font(14).render("本层尚未获得圣物。", True, (160, 160, 180))
+            eng.screen.blit(txt, (panel_x + 14, panel_y + 44))
             return
-        ly = panel_y + 40
+        ly = panel_y + 44
         for r in relics:
             d = get_relic_def(r.id)
             if not d: continue
             rarity_cn = "稀有" if d.rarity == "rare" else "史诗" if d.rarity == "epic" else "普通"
             rc = (100, 170, 255) if d.rarity == "rare" else (190, 100, 255) if d.rarity == "epic" else (255, 220, 100)
-            line = f"[{rarity_cn}] {d.name} - {d.desc}"
+            # M18: mastery 星标
+            mlv = g_relic_archive.mastery_level(r.id)
+            stars = "★" * mlv
+            line = f"{stars} [{rarity_cn}] {d.name} - {d.desc}"
             txt = get_font(14).render(line, True, rc)
             eng.screen.blit(txt, (panel_x + 14, ly))
             ly += line_h
@@ -1067,6 +1190,7 @@ class GameScene(Scene):
         room_ty = eng.stairs_pos[1] if eng.stairs_pos else MAP_HEIGHT // 2
         boss = spawn_boss(room_tx, room_ty, eng.current_floor)
         eng.monsters.append(boss)
+        self.boss_sys.init_on_spawn(boss, eng.current_floor)  # D0: 生命周期
 
     def _update_boss_cinematic(self, delta_time: float):
         """Boss 1秒特写倒计时 → 切换到 playing。"""

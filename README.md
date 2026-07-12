@@ -290,37 +290,71 @@ Relic 是挂在 Player 身上的局内常驻被动构筑物，不占技能栏、
 
 ```
 roguelike/
-├── main.py            # 程序入口
-├── game.py            # 游戏引擎（主循环 + 状态机）
-├── config.py          # 全局配置常量
+├── main.py               # 程序入口 (字体/音频/CrashHandler)
+├── game.py               # 游戏引擎（主循环 + 场景管理）
+├── config.py             # 全局配置常量
 ├── src/
-│   ├── entities/      # 实体模块
-│   │   ├── entity.py  # 实体基类
-│   │   ├── components.py    # 战斗属性组件
-│   │   ├── player.py  # 玩家
-│   │   ├── monster.py # 怪物
-│   │   ├── ai.py      # 怪物 AI 状态机
-│   │   ├── item.py    # 装备 / 药水 / 稀有度
-│   │   ├── skill.py   # 主动 / 被动技能
-│   │   └── boss.py    # Boss AI + 技能
-│   ├── systems/       # 游戏系统
-│   │   ├── combat_system.py     # 伤害公式
-│   │   ├── inventory_system.py  # 背包管理
-│   │   ├── skill_system.py      # 技能辅助
-│   │   └── buff_system.py       # Buff 配置/结算/触发
-│   │   └── relic_system.py       # 圣物配置/权重掉落/查询
-│   └── world/          # 世界模块
-│       ├── tile.py     # 瓷砖类型
-│       ├── game_map.py # 地图网格 / 碰撞
-│       ├── dungeon_generator.py  # BSP 地牢生成 (seed 驱动)
-│       ├── special_room.py       # 特殊房间: 3类型/交互/发现
-│       └── tile_renderer.py      # 瓦片渲染器 (含特殊房间着色)
-├── resources/          # JSON 资源配置（外部数据）
-│   ├── buffs.json      # Buff 配置 (3种)
-│   └── relics.json     # Relic 配置 (11种 + rarity)
-├── assets/            # 游戏资源
-├── docs/              # 设计文档
-└── tests/             # 单元测试
+│   ├── core/             # 引擎框架
+│   │   └── scene.py      # Scene 基类（enter/exit/update/render）
+│   ├── entities/         # 实体模块
+│   │   ├── entity.py     # 实体基类 (位置+碰撞框)
+│   │   ├── components.py # CombatStats + RelicInstance
+│   │   ├── player.py     # Player + Direction + 等级/XP
+│   │   ├── monster.py    # Monster + spawn_monster 工厂
+│   │   ├── ai.py         # MonsterAI: IDLE→CHASE→ATTACK
+│   │   ├── boss.py       # BossAI + 3 BossSkill + 狂暴
+│   │   ├── item.py       # 4 Rarity + Equipment/Consumable/Charm
+│   │   └── skill.py      # 4 Active + 2 Passive + SkillManager
+│   ├── systems/          # 游戏系统
+│   │   ├── combat_system.py     # calculate_damage / find_attack_target
+│   │   ├── inventory_system.py  # Inventory: add/remove/equip/use
+│   │   ├── skill_system.py      # get_targets_in_cone
+│   │   ├── buff_system.py       # BuffDef/Instance/Trigger + apply/tick
+│   │   ├── relic_system.py      # RelicDef + try_grant_random_relic
+│   │   └── relic_archive.py     # RelicArchive 跨局收集/熟练度/星标
+│   ├── game/             # D1-D6: 游戏配置与子系统
+│   │   ├── floor_config.py      # FloorConfig + FloorNarrative 15层数据
+│   │   ├── build_tag.py         # BuildTag 标签枚举 (19种)
+│   │   ├── build_score.py       # BuildScore + BuildType 六流派判定
+│   │   ├── event_system.py      # EventType (10种) + DungeonEvent
+│   │   ├── world_state.py       # WorldState + WorldFlag 标志位
+│   │   ├── growth_curve.py      # GrowthCurve 15层难度曲线
+│   │   ├── boss_narrative.py    # BossDialogue 自适应对话
+│   │   ├── meta_progression.py  # MetaProgression + RunSummary
+│   │   └── ending_director.py   # EndingDirector 五结局判定
+│   ├── directors/        # D0-D6: Director 编排层
+│   │   ├── boss_system_director.py
+│   │   ├── gameplay_system_director.py
+│   │   ├── presentation_system_director.py
+│   │   └── game_flow_director.py
+│   ├── scenes/           # 场景模块
+│   │   ├── title_scene.py        # 标题画面 (粒子 + 菜单 + 操作说明)
+│   │   ├── game_scene.py         # 核心游戏 (~1200行)
+│   │   ├── floor_select_scene.py # 15关选关网格
+│   │   ├── tutorial_scene.py     # 6阶段教程
+│   │   ├── death_scene.py        # 死亡画面
+│   │   └── victory_scene.py      # 通关画面
+│   ├── world/            # 世界模块
+│   │   ├── tile.py       # TileType + Tile
+│   │   ├── game_map.py   # 2D瓦片网格 / 碰撞 / 特殊房间查询
+│   │   ├── dungeon_generator.py  # BSP 地牢生成 (seed 驱动)
+│   │   ├── special_room.py       # 特殊房间: 3类型/交互/发现
+│   │   └── tile_renderer.py      # 瓦片渲染器 (3D墙/地面纹理)
+│   ├── ui_helpers.py     # draw_panel/glow_text/progress_bar/Particle
+│   ├── fx_engine.py      # VFX: pulse/arc/bolt/spark/slash
+│   ├── bgm_engine.py     # 4支BGM (和弦+旋律+低音+鼓轨)
+│   ├── sfx_engine.py     # 8SFX (程序合成 + jojo_timestop.mp3)
+│   └── tutorial.py       # 教程引导逻辑
+├── resources/            # JSON 资源配置
+│   ├── buffs.json        # Buff 配置 (5种)
+│   └── relics.json       # Relic 配置 (11种 + rarity)
+├── saves/                # 存档 (save.json)
+│   └── save_manager.py   # JSON 序列化/反序列化
+├── assets/               # 外部资源
+│   └── jojo_timestop.mp3 # The World 时停音效
+└── docs/                 # 设计文档
+    ├── GDD-review.md     # 玩法设计审查
+    └── 类图与架构说明.md  # 类图与架构
 ```
 
 ---
@@ -348,3 +382,11 @@ roguelike/
 | M17 | 圣物系统 MVP（5 relic / 宝箱掉落 / 局内效果 / HUD / 存档） | ✅ |
 | M18 | 圣物内容扩展（11 relic + rarity + 宝箱权重掉落 + R 面板） | ✅ |
 | M19 | UI 引导 + 字体覆盖稳定化（操作说明 / 快捷键提示 / 首次 relic 提示） | ✅ |
+| M20 | RelicArchive 跨局收集（收集率/熟练度星标）+ 标题操作说明按键修正 | ✅ |
+| D0  | Director 架构预铺（Boss/Gameplay/Presentation/Flow 四层骨架） | ✅ |
+| D1  | FloorConfig 统一配置 + 15层叙事数据 + 楼层/章节入场演出 + 随机旁白 | ✅ |
+| D2  | BuildTag 构筑标签 + BuildScore 流派识别 + GrowthCurve 难度曲线 | ✅ |
+| D3  | BuildType 六大流派判定 + PresentationDirector 消息系统 | ✅ |
+| D4  | WorldState 世界标志位 + EventSystem 事件 + BossNarrative 叙事对话 | ✅ |
+| D5  | BossSystemDirector 生命周期 + Phase2/LastStand/Death 通知 | ✅ |
+| D6  | MetaProgression 局外成长 + EndingDirector 五结局 + RunSummary 统计 | ✅ |
