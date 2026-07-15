@@ -109,11 +109,10 @@ def get_relic_hud_color(rid: str) -> tuple:
 
 # ---- Rarity weight (B12) ----
 def _rarity_level_int(rarity: str) -> int:
-    """稀有度字符串 → 整数层级。"""
-    return {"common": 0, "rare": 1, "epic": 2}.get(rarity, 0)
+    return {"common": 0, "rare": 1, "epic": 2, "legendary": 3}.get(rarity, 0)
 
 def _rarity_weight(rarity: str) -> int:
-    return {"common": 100, "rare": 40, "epic": 10}.get(rarity, 100)
+    return {"common": 100, "rare": 40, "epic": 10, "legendary": 3}.get(rarity, 100)
 
 
 # ---- Unified relic grant (B12) ----
@@ -129,7 +128,7 @@ def try_grant_random_relic(player, drop_chance: float) -> str:
 
     all_ids = get_all_relic_ids()
     # 按 rarity 收集未持有 relic
-    slots = {"common": [], "rare": [], "epic": []}
+    slots = {"common": [], "rare": [], "epic": [], "legendary": []}
     total_w = 0
     for rid in all_ids:
         if player_has_relic(player, rid):
@@ -137,6 +136,8 @@ def try_grant_random_relic(player, drop_chance: float) -> str:
         d = _g_relic.get(rid)
         if not d:
             continue
+        if d.rarity not in slots:
+            slots[d.rarity] = []
         slots[d.rarity].append(rid)
         if slots[d.rarity]:
             total_w += _rarity_weight(d.rarity)
@@ -147,7 +148,7 @@ def try_grant_random_relic(player, drop_chance: float) -> str:
     # 轮盘选 rarity
     roll = random.randint(0, total_w - 1)
     chosen_rarity = None
-    for rar in ["common", "rare", "epic"]:
+    for rar in ["common", "rare", "epic", "legendary"]:
         if not slots[rar]:
             continue
         w = len(slots[rar]) * _rarity_weight(rar)  # B12.6-fix: per-rarity total weight
