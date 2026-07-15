@@ -1,32 +1,23 @@
 [
-  {
-    "id": "poison",
-    "display_name": "中毒",
-    "short_name": "毒",
-    "duration": 4.0,
-    "max_stacks": 5,
-    "tick_interval": 0.5,
-    "tick_damage": 3,
-    "hud_color": [100, 220, 80]
-  },
-  {
-    "id": "slow",
-    "display_name": "减速",
-    "short_name": "慢",
-    "duration": 3.0,
-    "max_stacks": 3,
-    "tick_interval": 0.0,
-    "tick_damage": 0,
-    "hud_color": [120, 180, 255]
-  },
-  {
-    "id": "attack_up",
-    "display_name": "攻击提升",
-    "short_name": "攻",
-    "duration": 6.0,
-    "max_stacks": 3,
-    "tick_interval": 0.0,
-    "tick_damage": 0,
-    "hud_color": [255, 150, 50]
-  }
+  {"id":"poison","display_name":"中毒","short_name":"毒","duration":4.0,"max_stacks":5,"tick_interval":0.5,"tick_damage":3,"hud_color":[100,220,80]},
+  {"id":"slow","display_name":"减速","short_name":"慢","duration":3.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[120,180,255]},
+  {"id":"attack_up","display_name":"攻击提升","short_name":"攻","duration":6.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[255,150,50]},
+  {"id":"bleed","display_name":"流血","short_name":"血","duration":3.0,"max_stacks":5,"tick_interval":0.6,"tick_damage":4,"hud_color":[220,40,40]},
+  {"id":"shield","display_name":"护盾","short_name":"盾","duration":8.0,"max_stacks":1,"tick_interval":0.0,"tick_damage":0,"hud_color":[80,180,255]},
+
+  {"id":"berserk","display_name":"狂战士","short_name":"狂","duration":5.0,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[255,80,40]},
+  {"id":"regen","display_name":"再生","short_name":"再","duration":4.0,"max_stacks":3,"tick_interval":1.0,"tick_damage":-2,"hud_color":[100,255,120]},
+  {"id":"burn","display_name":"灼烧","short_name":"烧","duration":3.0,"max_stacks":5,"tick_interval":0.8,"tick_damage":5,"hud_color":[255,140,20]},
+  {"id":"freeze","display_name":"冻结","short_name":"冻","duration":1.5,"max_stacks":1,"tick_interval":0.0,"tick_damage":0,"hud_color":[100,200,255]},
+  {"id":"stun","display_name":"眩晕","short_name":"晕","duration":1.2,"max_stacks":1,"tick_interval":0.0,"tick_damage":0,"hud_color":[220,220,60]},
+  {"id":"defense_up","display_name":"防御提升","short_name":"防","duration":6.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[140,160,220]},
+  {"id":"fear","display_name":"恐惧","short_name":"惧","duration":2.0,"max_stacks":1,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,100,200]},
+  {"id":"blind","display_name":"致盲","short_name":"盲","duration":2.5,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[180,180,160]},
+  {"id":"growth","display_name":"成长","short_name":"长","duration":30.0,"max_stacks":5,"tick_interval":0.0,"tick_damage":0,"hud_color":[180,255,180]},
+  {"id":"stone_skin","display_name":"石肤","short_name":"石","duration":8.0,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[160,140,120]},
+  {"id":"blessing","display_name":"祝福","short_name":"祝","duration":10.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[255,220,100]},
+  {"id":"curse","display_name":"诅咒","short_name":"咒","duration":5.0,"max_stacks":3,"tick_interval":1.0,"tick_damage":2,"hud_color":[160,40,180]},
+  {"id":"lifesteal","display_name":"吸血","short_name":"吸","duration":6.0,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,30,80]},
+  {"id":"adrenaline","display_name":"肾上腺素","short_name":"肾","duration":8.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[255,180,50]},
+  {"id":"momentum","display_name":"顺势","short_name":"势","duration":4.0,"max_stacks":5,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,200,40]}
 ]

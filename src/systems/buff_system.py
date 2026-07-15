@@ -194,36 +194,62 @@ def _count_stacks(buffs, bid: str) -> int:
 def get_effective_attack(entity) -> int:
     if not entity or not hasattr(entity, "combat"):
         return 1
+    from src.systems.relic_system import player_has_relic
     base = entity.combat.get_effective_attack()
     stacks = _count_stacks(getattr(entity, "active_buffs", []), "attack_up")
-    atk = int(base * (1.0 + 0.3 * stacks))
-    # B12: war_drum — 攻击力 +15%
-    from src.systems.relic_system import player_has_relic
-    if player_has_relic(entity, "war_drum"):
-        atk = int(atk * 1.15)
+    berserk_s = _count_stacks(getattr(entity, "active_buffs", []), "berserk")
+    blessing_s = _count_stacks(getattr(entity, "active_buffs", []), "blessing")
+    momentum_s = _count_stacks(getattr(entity, "active_buffs", []), "momentum")
+    adrenaline_s = _count_stacks(getattr(entity, "active_buffs", []), "adrenaline")
+    blind_s = _count_stacks(getattr(entity, "active_buffs", []), "blind")
+    atk = int(base * (1.0 + 0.30 * stacks + 0.25 * berserk_s + 0.10 * blessing_s
+                          + 0.08 * momentum_s + 0.15 * adrenaline_s - 0.15 * blind_s))
+    # B12+D8: relic multipliers
+    if player_has_relic(entity, "war_drum"): atk = int(atk * 1.15)
+    if player_has_relic(entity, "hunter_gloves"): atk = int(atk * 1.10)
+    if player_has_relic(entity, "ancient_crown"): atk = int(atk * 1.08)
+    if player_has_relic(entity, "dragon_heart"):  atk = int(atk * 1.15)
+    if player_has_relic(entity, "infinity_orb"):  atk = int(atk * 1.20)
+    # D8: blood_chalice — HP越低攻越高
+    if player_has_relic(entity, "blood_chalice"):
+        hp_r = entity.combat.current_hp / max(1, get_effective_max_hp(entity))
+        bonus = max(0, (1.0 - hp_r) * 0.30)
+        atk = int(atk * (1.0 + bonus))
     return max(1, atk)
 
 def get_effective_speed(entity, base_speed: float = 200.0) -> float:
     if not entity or not hasattr(entity, "active_buffs"):
         return base_speed
+    from src.systems.relic_system import player_has_relic
     stacks = _count_stacks(entity.active_buffs, "slow")
     speed = base_speed * (0.7 ** stacks)
-    # B11: hunters_eye — 移速 +10%
-    from src.systems.relic_system import player_has_relic
-    if player_has_relic(entity, "hunters_eye"):
-        speed *= 1.10
+    # B11+D8: relic speed bonuses
+    if player_has_relic(entity, "hunters_eye"):   speed *= 1.10
+    if player_has_relic(entity, "traveler_boots"): speed *= 1.08
+    if player_has_relic(entity, "ancient_crown"):  speed *= 1.05
+    if player_has_relic(entity, "dragon_heart"):   speed *= 1.08
+    if player_has_relic(entity, "infinity_orb"):   speed *= 1.10
+    # D8: adrenaline +5%/stack
+    speed *= 1.05 ** _count_stacks(entity.active_buffs, "adrenaline")
+    # D8: freeze → 0
+    if _count_stacks(entity.active_buffs, "freeze") > 0:
+        return 0.0
+    # D8: stun/fear → ×0.30
+    if _count_stacks(entity.active_buffs, "stun") > 0 or _count_stacks(entity.active_buffs, "fear") > 0:
+        speed *= 0.30
     return speed
 
-# B11/B12: 有效最大生命 (blood_charm +20, iron_heart +10)
+# B11/B12+D8: 有效最大生命 (blood_charm +20, iron_heart +10, dragon_heart +30, ancient_crown +8, infinity_orb +25)
 def get_effective_max_hp(entity) -> int:
     if not entity or not hasattr(entity, "combat"):
         return 0
-    hp = entity.combat.max_hp
     from src.systems.relic_system import player_has_relic
-    if player_has_relic(entity, "blood_charm"):
-        hp += 20
-    if player_has_relic(entity, "iron_heart"):
-        hp += 10
+    hp = entity.combat.max_hp
+    if player_has_relic(entity, "blood_charm"):  hp += 20
+    if player_has_relic(entity, "iron_heart"):   hp += 10
+    if player_has_relic(entity, "dragon_heart"): hp += 30
+    if player_has_relic(entity, "ancient_crown"): hp += 8
+    if player_has_relic(entity, "infinity_orb"):  hp += 25
     return hp
 
 

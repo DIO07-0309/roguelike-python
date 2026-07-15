@@ -2,12 +2,36 @@
   {"id":"blood_charm","name":"血纹护符","short_name":"血","desc":"最大生命+20","rarity":"common","param":20,"hud_color":[200,60,60]},
   {"id":"venom_fang","name":"毒牙","short_name":"毒","desc":"中毒每跳伤害+1","rarity":"common","param":1,"hud_color":[100,220,80]},
   {"id":"golden_dice","name":"金色骰子","short_name":"骰","desc":"宝箱额外多给一件物品","rarity":"rare","param":0,"hud_color":[255,200,50]},
-  {"id":"hunters_eye","name":"猎人之眼","short_name":"眼","desc":"移速+10%","rarity":"common","param":0.1,"hud_color":[120,180,255]},
-  {"id":"leech_blade","name":"吸血之刃","short_name":"吸","desc":"击杀怪物时20%概率恢复5HP","rarity":"common","param":0.2,"param2":5,"hud_color":[200,40,180]},
+  {"id":"hunters_eye","name":"猎人之眼","short_name":"眼","desc":"移速+10%","rarity":"common","param":0.10,"hud_color":[120,180,255]},
+  {"id":"leech_blade","name":"吸血之刃","short_name":"吸","desc":"击杀怪物时20%概率恢复5HP","rarity":"common","param":0.20,"param2":5,"hud_color":[200,40,180]},
   {"id":"war_drum","name":"战鼓","short_name":"鼓","desc":"攻击力提升15%","rarity":"common","param":0.15,"hud_color":[200,60,60]},
   {"id":"battle_totem","name":"战斗图腾","short_name":"战","desc":"击杀怪物时15%概率获得1层攻击强化","rarity":"common","param":0.15,"hud_color":[200,120,40]},
   {"id":"iron_heart","name":"铁之心","short_name":"铁","desc":"最大生命+10","rarity":"common","param":10,"hud_color":[160,160,180]},
   {"id":"sage_leaf","name":"贤者之叶","short_name":"叶","desc":"祭坛与泉水的治疗额外+10","rarity":"rare","param":10,"hud_color":[80,200,120]},
-  {"id":"merchant_coin","name":"商人硬币","short_name":"币","desc":"宝箱中的圣物掉率提高15%并额外1件物品","rarity":"rare","param":0.15,"hud_color":[255,200,50]},
-  {"id":"plague_mask","name":"瘟疫面具","short_name":"瘟","desc":"中毒对你造成的每次伤害减少1点","rarity":"epic","param":1,"hud_color":[180,60,200]}
+  {"id":"merchant_coin","name":"商人硬币","short_name":"币","desc":"宝箱中的圣物掉率提高15%","rarity":"rare","param":0.15,"hud_color":[255,200,50]},
+  {"id":"plague_mask","name":"瘟疫面具","short_name":"瘟","desc":"中毒对你造成的每次伤害减少1点","rarity":"epic","param":1,"hud_color":[180,60,200]},
+
+  {"id":"hunter_gloves","name":"猎手手套","short_name":"手","desc":"普通攻击伤害+10%","rarity":"common","param":0.10,"hud_color":[200,160,60]},
+  {"id":"traveler_boots","name":"旅者之靴","short_name":"靴","desc":"移动速度+8%","rarity":"common","param":0.08,"hud_color":[140,140,180]},
+  {"id":"healing_herb","name":"治愈草药","short_name":"草","desc":"所有治疗效果+15%","rarity":"common","param":0.15,"hud_color":[100,200,100]},
+  {"id":"iron_ring","name":"铁戒指","short_name":"戒","desc":"物理防御+5","rarity":"common","param":5,"hud_color":[160,160,160]},
+  {"id":"battle_medal","name":"战斗勋章","short_name":"勋","desc":"击杀怪物回复3HP","rarity":"common","param":1.0,"param2":3,"hud_color":[220,180,40]},
+  {"id":"tiny_shield","name":"小圆盾","short_name":"盾","desc":"受到攻击时有10%概率减伤50%","rarity":"common","param":0.10,"param2":50,"hud_color":[140,140,200]},
+
+  {"id":"blood_chalice","name":"血杯","short_name":"杯","desc":"生命越低攻击越高(最高+30%)","rarity":"rare","param":0.30,"hud_color":[220,40,40]},
+  {"id":"frozen_crystal","name":"冰晶","short_name":"冰","desc":"攻击有25%概率附带减速","rarity":"rare","param":0.25,"hud_color":[100,180,255]},
+  {"id":"vampire_fang","name":"吸血獠牙","short_name":"獠","desc":"击杀怪物回复8%最大生命","rarity":"rare","param":0.08,"hud_color":[200,30,100]},
+  {"id":"thunder_core","name":"雷霆核心","short_name":"雷","desc":"击杀怪物时30%概率连锁闪电(ATK×1.5AOE)","rarity":"rare","param":0.30,"param2":150,"hud_color":[255,255,80]},
+  {"id":"magic_quill","name":"魔力羽毛笔","short_name":"笔","desc":"技能冷却减少15%","rarity":"rare","param":0.15,"hud_color":[180,140,255]},
+  {"id":"emerald_heart","name":"翡翠之心","short_name":"翠","desc":"每5秒自动回复3HP","rarity":"rare","param":5.0,"param2":3,"hud_color":[80,220,120]},
+
+  {"id":"phoenix_feather","name":"凤凰羽毛","short_name":"凤","desc":"死亡时保留1HP并恢复30%生命(每局1次)","rarity":"epic","param":0.30,"hud_color":[255,120,40]},
+  {"id":"time_fragment","name":"时之碎片","short_name":"时","desc":"击杀怪物时5%概率刷新所有技能冷却","rarity":"epic","param":0.05,"hud_color":[180,200,255]},
+  {"id":"soul_lantern","name":"灵魂灯笼","short_name":"魂","desc":"进入新楼层时获得1层攻击强化和1层护盾","rarity":"epic","param":1,"hud_color":[180,220,100]},
+  {"id":"ancient_crown","name":"古代皇冠","short_name":"冠","desc":"攻击+8% 移速+5% 最大生命+8","rarity":"epic","param":0.08,"param2":8,"hud_color":[255,200,80]},
+  {"id":"chaos_dice","name":"混沌骰子","short_name":"混","desc":"使用技能时30%概率不消耗冷却","rarity":"epic","param":0.30,"hud_color":[255,100,200]},
+
+  {"id":"infinity_orb","name":"无限之球","short_name":"∞","desc":"所有技能等级+1","rarity":"legendary","param":1,"hud_color":[255,220,40]},
+  {"id":"dragon_heart","name":"龙之心","short_name":"龙","desc":"攻击+15% 生命+30 防御+8 移速+8%","rarity":"legendary","param":0.15,"param2":30,"hud_color":[255,100,20]},
+  {"id":"god_hand","name":"神之手","short_name":"神","desc":"首次死亡时复活并恢复满血(每局1次)","rarity":"legendary","param":1.0,"hud_color":[255,240,200]}
 ]
