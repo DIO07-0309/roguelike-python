@@ -379,3 +379,63 @@ roguelike/
 | D4  | WorldState 世界标志位 + EventSystem 事件 + BossNarrative 叙事对话 | ✅ |
 | D5  | BossSystemDirector 生命周期 + Phase2/LastStand/Death 通知 | ✅ |
 | D6  | MetaProgression 局外成长 + EndingDirector 五结局 + RunSummary 统计 | ✅ |
+| G5  | C++同期同步: +5技能行为类 +AIArchetype +Boss Phase2(6Boss) +JSON全量 | ✅ |
+
+---
+
+## G5 C++同期同步 (2026-07-21)
+
+### 新增/更新模块
+| 文件 | 说明 |
+|------|------|
+| `src/game/enemy_defs.py` | EnemyDef loader — enemies.json 31种敌人数据驱动 |
+| `src/game/skill_defs.py` | SkillDef loader — skills.json 20技能定义 |
+| `resources/` | **10个JSON全部同步C++版**: buffs(25), relics(63), enemies(31), bosses(6), skills(20), items(36), quests(12), dialogues(34), endings(5), meta_nodes(10) |
+
+### 更新的核心系统
+| 系统 | 同步内容 |
+|------|---------|
+| `monster.py` spawn_monster() | EnemyDef优先创建, 24+类型回退预设, 颜色/触发/技能全支持 |
+| `buff_system.py` BuffDef | +tags字段 + 15种buff自动标签 (electrified/frostbite/deep_wound等) |
+| `build_score.py` | 6→12 BuildType (冰霜法师/雷电法师/流血剑士/暗影刺客/重装守卫/召唤领主) |
+| `skill.py` | +5个行为类: IceNovaSkill, ChainLightningSkill, ShadowStrikeSkill, BloodFrenzySkill, SummonSpiritSkill (9→14主动技能) |
+| `ai.py` | +AIArchetype + MonsterSkillType(12)+skill池+行为钩子 (Sniper/Controller/Ambush/Guardian) |
+| `boss.py` | +WhirlwindSkill/LaserBarrageSkill + 6 Boss Phase2 + `_boss_id`驱动 |
+
+**数据同步**: 10 JSON ↔ C++ 100%一致
+**代码同步**: 技能行为/AI Archetype/Boss Phase2 完全一致
+
+## G6 架构同步 (2026-07)
+
+| 新增模块 | 说明 |
+|----------|------|
+| `src/core/event_bus.py` | EventBus — 30事件类型 pub/sub (C++ parity) |
+| `src/core/replay/` | ReplayRecorder + ReplayPlayer + StateHash |
+| `src/core/sim/` | SimAI + SimRunner — 自动平衡测试 |
+
+
+---
+
+## C++ 版同步进展 (roguelike_cpp)
+
+C++ 版 (Raylib 5.0 + C++17 + CMake) 在 Python 版基础上已完成 **G1~G5 五个阶段的深度重构**。
+
+### 核心差异对比
+
+| 维度 | Python 版 | C++ 版 |
+|------|----------|--------|
+| 数据驱动 | 2 JSON (buffs 5种 / relics 11种) | **10 JSON** (buff 25 / relic 63 / enemy 31 / boss 6 / skill 20 / item 36 / quest 12 / dialogue 34 / ending 5 / meta 10) |
+| Build 流派 | 6 种 | **12 种** (新: 冰霜/雷电/流血/暗影/重装/召唤) |
+| 技能 | 3 主动 + 2 被动 | **14 主动 + 6 被动** (含 5 个独特行为类: 冰爆/连锁闪电/暗影突刺/血怒/召唤英灵) |
+| 敌人 | 基础 8 种 | **31 种 / 9 种 AI Archetype** (狙击/控制/潜伏/守卫 — 行为与外观解耦) |
+| Boss | 1 种 (深渊领主) | **6 种, 各唯一 Phase2 机制** (旋风斩/激光弹幕/引力拉扯等) |
+| 事件 | 10 种 | **18 种** (40% 生成率, Ch2+ 双事件) |
+| 特殊房间 | 3 种 | **9 种** (商店/铁匠/图书馆/赌徒/神殿/隐藏房) |
+| Mod 支持 | 无 | **完整 Provider + Namespace + Dependency + MergePatch** |
+| Replay 系统 | 无 | **录制 + 回放 + 确定性 RNG + Hash 验证** |
+| 自动化模拟 | 无 | **SimAI + --sim N CLI + 平衡报告** |
+| 存档 | save.json | **Save v3** (atl/rul/qst/end 字段, 3 版本向后兼容) |
+| EventBus | 无 | **30 种事件类型**, Manager-Director-Presentation 解耦 |
+| CLI | 无 | `--record` / `--replay` / `--sim N` |
+
+### Git: [github.com/DIO07-0309/roguelike-cpp](https://github.com/DIO07-0309/roguelike-cpp) | v0.8.5 (G5.7 Final)

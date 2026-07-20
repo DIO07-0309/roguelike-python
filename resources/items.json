@@ -1,0 +1,53 @@
+{
+  "rarity": {
+    "mults": [1.0, 1.5, 2.0, 3.0],
+    "weights": [60, 25, 12, 3]
+  },
+  "items": [
+    {"id":"short_sword",    "category":"weapon", "name":"短剑", "atk_min":5, "atk_max":12, "pdef_max":2},
+    {"id":"long_sword",     "category":"weapon", "name":"长剑", "atk_min":6, "atk_max":12, "pdef_max":2},
+    {"id":"battle_axe",     "category":"weapon", "name":"战斧", "atk_min":7, "atk_max":12, "pdef_max":2},
+    {"id":"dagger",         "category":"weapon", "name":"匕首", "atk_min":5, "atk_max":10, "pdef_max":2},
+    {"id":"scimitar",       "category":"weapon", "name":"弯刀", "atk_min":6, "atk_max":11, "pdef_max":2},
+    {"id":"heavy_hammer",   "category":"weapon", "name":"重锤", "atk_min":8, "atk_max":12, "pdef_max":2},
+    {"id":"spear",          "category":"weapon", "name":"长矛", "atk_min":5, "atk_max":12, "pdef_max":2},
+
+    {"id":"leather_armor",  "category":"armor",  "name":"皮甲",   "pdef_min":3, "pdef_max":8, "mdef_max":4},
+    {"id":"chainmail",      "category":"armor",  "name":"锁子甲", "pdef_min":3, "pdef_max":8, "mdef_max":4},
+    {"id":"iron_plate",     "category":"armor",  "name":"铁铠",   "pdef_min":4, "pdef_max":8, "mdef_max":4},
+    {"id":"scale_armor",    "category":"armor",  "name":"鳞甲",   "pdef_min":3, "pdef_max":8, "mdef_max":4},
+    {"id":"plate_armor",    "category":"armor",  "name":"板甲",   "pdef_min":5, "pdef_max":8, "mdef_max":4},
+
+    {"id":"health_potion",  "category":"potion", "name":"生命药水", "effect_type":"heal", "heal_min":15, "heal_max":40},
+    {"id":"healing_potion", "category":"potion", "name":"治疗药剂", "effect_type":"heal", "heal_min":15, "heal_max":40},
+    {"id":"regen_elixir",   "category":"potion", "name":"恢复灵药", "effect_type":"heal", "heal_min":15, "heal_max":40},
+    {"id":"strength_potion","category":"potion", "name":"力量药剂", "effect_type":"buff", "buff_id":"attack_up"},
+
+    {"id":"slash_charm",    "category":"charm",  "name":"斩击纹章", "skill_id":"slash",     "cd_bonus":0.15, "power_bonus":0.40},
+    {"id":"fireball_charm", "category":"charm",  "name":"烈焰之心", "skill_id":"fireball",  "cd_bonus":0.20, "power_bonus":0.50},
+    {"id":"heal_charm",     "category":"charm",  "name":"生命之泉", "skill_id":"self_heal", "cd_bonus":0.25, "power_bonus":0.40},
+    {"id":"time_charm",     "category":"charm",  "name":"时光沙漏", "skill_id":"the_world", "cd_bonus":0.25, "power_bonus":0.25},
+
+    {"id":"blood_charm_item","category":"charm","name":"血刃纹章","skill_id":"blood_slash","cd_bonus":0.15,"power_bonus":0.45},
+    {"id":"frost_charm","category":"charm","name":"冰锋护符","skill_id":"frost_edge","cd_bonus":0.18,"power_bonus":0.40},
+    {"id":"shadow_charm","category":"charm","name":"影切之印","skill_id":"shadow_slice","cd_bonus":0.12,"power_bonus":0.55},
+    {"id":"ice_nova_charm","category":"charm","name":"冰爆核心","skill_id":"ice_nova","cd_bonus":0.22,"power_bonus":0.45},
+    {"id":"lightning_charm","category":"charm","name":"闪电徽记","skill_id":"chain_lightning","cd_bonus":0.15,"power_bonus":0.50},
+    {"id":"meteor_charm","category":"charm","name":"陨石烙印","skill_id":"meteor","cd_bonus":0.28,"power_bonus":0.55},
+
+    {"id":"regeneration_potion","category":"potion","name":"再生灵药","effect_type":"heal","heal_min":20,"heal_max":35},
+    {"id":"berserk_potion","category":"potion","name":"狂怒药剂","effect_type":"buff","buff_id":"berserk"},
+    {"id":"stone_potion","category":"potion","name":"石肤药剂","effect_type":"buff","buff_id":"stone_skin"},
+    {"id":"freeze_potion","category":"potion","name":"冰霜药剂","effect_type":"buff","buff_id":"frostbite"},
+
+    {"id":"katana","category":"weapon","name":"太刀","atk_min":8,"atk_max":13,"pdef_max":2},
+    {"id":"greatsword","category":"weapon","name":"巨剑","atk_min":10,"atk_max":15,"pdef_max":3},
+    {"id":"staff","category":"weapon","name":"法杖","atk_min":4,"atk_max":8,"pdef_max":1},
+    {"id":"dagger_wp","category":"weapon","name":"暗杀刃","atk_min":6,"atk_max":10,"pdef_max":1},
+    {"id":"thunder_hammer","category":"weapon","name":"雷锤","atk_min":9,"atk_max":14,"pdef_max":2},
+
+    {"id":"rune_armor","category":"armor","name":"符文甲","pdef_min":5,"pdef_max":10,"mdef_max":6},
+    {"id":"ice_mail","category":"armor","name":"冰霜链甲","pdef_min":4,"pdef_max":9,"mdef_max":5},
+    {"id":"shadow_robe","category":"armor","name":"暗影长袍","pdef_min":2,"pdef_max":5,"mdef_max":8}
+  ]
+}

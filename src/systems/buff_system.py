@@ -30,6 +30,39 @@ class BuffDef:
     display_name: str = ""
     short_name: str = ""
     hud_color: tuple = (200, 200, 200)
+    tags: list = None  # G5 sync: build tags
+
+    def __post_init__(self):
+        if self.tags is None:
+            self.tags = []
+        if not self.tags:
+            self._fill_tags()
+
+    def _fill_tags(self):
+        """G5 sync: auto-fill buff build tags from id."""
+        from src.game.build_tag import BuildTag
+        t = self.id
+        if t == "poison": self.tags = [BuildTag.POISON, BuildTag.DOT]
+        elif t == "slow": self.tags = [BuildTag.ICE]
+        elif t == "attack_up": self.tags = [BuildTag.SUPPORT]
+        elif t == "bleed": self.tags = [BuildTag.BLEED, BuildTag.DOT]
+        elif t == "shield": self.tags = [BuildTag.DEFENSE]
+        elif t == "burn": self.tags = [BuildTag.FIRE, BuildTag.DOT]
+        elif t == "freeze": self.tags = [BuildTag.ICE]
+        elif t == "stun": self.tags = [BuildTag.LIGHTNING]
+        elif t == "fear": self.tags = [BuildTag.TIME]
+        elif t == "regen": self.tags = [BuildTag.HEAL]
+        elif t == "berserk": self.tags = [BuildTag.MELEE]
+        elif t == "stone_skin": self.tags = [BuildTag.DEFENSE]
+        elif t == "defense_up": self.tags = [BuildTag.DEFENSE, BuildTag.SUPPORT]
+        elif t == "lifesteal": self.tags = [BuildTag.BLEED, BuildTag.MELEE]
+        elif t == "adrenaline": self.tags = [BuildTag.MELEE, BuildTag.COMBO]
+        elif t == "curse": self.tags = [BuildTag.SUMMON, BuildTag.DOT]
+        elif t == "electrified": self.tags = [BuildTag.LIGHTNING, BuildTag.DOT]
+        elif t == "frostbite": self.tags = [BuildTag.ICE, BuildTag.DOT]
+        elif t == "deep_wound": self.tags = [BuildTag.BLEED, BuildTag.DOT, BuildTag.HEAVY]
+        elif t == "shadow_veil": self.tags = [BuildTag.TIME, BuildTag.DEFENSE]
+        elif t == "summon_bless": self.tags = [BuildTag.SUMMON, BuildTag.SUPPORT]
 
 
 # ---- BuffTrigger ----

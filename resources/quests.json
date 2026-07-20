@@ -1,0 +1,25 @@
+[
+  {"id":"save_prisoner","quest_id":0,"title":"救出囚犯","desc":"F2的囚犯埃德加已经三十年没见过新面孔了。","chapter":1,"required_stage":"chapter_1","npc_floor":2,"reward":{"set_flag":"saved_prisoner","counter_name":"prisoner_saved","counter_add":1,"story_msg":"囚犯的祝福似乎让你更勇敢了。","npc_id":20,"trust":2}},
+
+  {"id":"save_priest","quest_id":1,"title":"谒见神官","desc":"F7神殿最后的祭司——泰伦斯。","chapter":1,"required_stage":"chapter_2","npc_floor":7,"reward":{"set_flag":"saved_priest","counter_name":"priest_trust","counter_add":2,"story_msg":"神官的祈祷仍然在神殿中回荡。","npc_id":70,"trust":3,"respect":1}},
+
+  {"id":"kill_warden","quest_id":2,"title":"击杀狱卒","desc":"暗影骑士——第一狱守。","chapter":1,"required_stage":"chapter_1","complete_flag":"boss1_defeated","npc_floor":0,"next_quest_id":4,"reward":{"buff_id":"attack_up","buff_stacks":1,"counter_name":"boss_kills","counter_add":1,"story_msg":"暗影骑士的盔甲化为了灰烬。","respect":1}},
+
+  {"id":"kill_fire_demon","quest_id":3,"title":"击败火魔","desc":"地狱火魔——熔岩深渊的远古恶魔。","chapter":1,"required_flag":"boss1_defeated","required_stage":"chapter_2","complete_flag":"boss2_defeated","next_quest_id":5,"reward":{"buff_id":"attack_up","buff_stacks":2,"counter_name":"boss_kills","counter_add":1,"story_msg":"火焰终于熄灭了。","respect":1}},
+
+  {"id":"talk_pilgrim","quest_id":4,"title":"对话朝圣者","desc":"F9迷失的朝圣者索拉斯。","chapter":1,"required_flag":"boss1_defeated","required_stage":"chapter_2","npc_floor":9,"reward":{"counter_name":"pilgrim_met","counter_add":1,"story_msg":"索拉斯的目光穿过黑暗看着你。","npc_id":90,"respect":1}},
+
+  {"id":"talk_watcher","quest_id":5,"title":"守望者之约","desc":"F14铸光者最后的弟子。","chapter":1,"required_flag":"boss2_defeated","required_stage":"chapter_3","npc_floor":14,"next_quest_id":6,"reward":{"counter_name":"watcher_met","counter_add":1,"story_msg":"你被守望了三千年。","npc_id":140,"trust":1,"respect":2}},
+
+  {"id":"kill_abyss","quest_id":6,"title":"终结深渊","desc":"决战深渊之主·终焉。","chapter":1,"required_flag":"boss2_defeated","required_stage":"final","complete_flag":"boss3_defeated","reward":{"set_flag":"all_boss_defeated","counter_name":"boss_kills","counter_add":1,"story_msg":"深渊终于安静了。","respect":3}},
+
+  {"id":"hunter_bounty","quest_id":7,"title":"猎人悬赏","desc":"F3猎人瑞卡拜托你击杀第5层Boss。","chapter":0,"required_flag":"hunter_met","required_stage":"chapter_1","complete_flag":"boss1_defeated","npc_floor":3,"reward":{"buff_id":"attack_up","buff_stacks":2,"counter_name":"hunter_quest","counter_add":1,"story_msg":"瑞卡点了点头——刀已经磨好了。","npc_id":30,"trust":2}},
+
+  {"id":"collector_items","quest_id":8,"title":"收藏家的委托","desc":"F6收藏家卡兹想收集3件圣物。","chapter":1,"required_flag":"collector_met","required_stage":"chapter_2","complete_flag":"collect_3_relics","npc_floor":6,"reward":{"relic_id":"golden_dice","counter_name":"collector_quest","counter_add":1,"story_msg":"卡兹激动地记录下了这一刻。","npc_id":60,"respect":1}},
+
+  {"id":"scout_intel","quest_id":9,"title":"侦察兵的情报","desc":"F8侦察兵维拉需要你到达F10。","chapter":1,"required_flag":"scout_met","required_stage":"chapter_2","complete_flag":"reach_floor_10","npc_floor":8,"reward":{"buff_id":"defense_up","buff_stacks":2,"counter_name":"scout_quest","counter_add":1,"story_msg":"维拉松了口气——情报是对的。","npc_id":80,"trust":1}},
+
+  {"id":"dreamer_quest","quest_id":10,"title":"梦见者的愿望","desc":"F12梦见者希望你击杀深渊之主。","chapter":1,"required_flag":"boss2_defeated","required_stage":"final","complete_flag":"boss3_defeated","npc_floor":12,"reward":{"relic_id":"infinity_orb","buff_id":"blessing","buff_stacks":2,"counter_name":"dreamer_quest","counter_add":1,"story_msg":"梦见者的梦终于醒了。","npc_id":120,"trust":2,"respect":1}},
+
+  {"id":"kill_10","quest_id":11,"title":"怪物猎人","desc":"击杀10只地牢怪物。","chapter":0,"hidden":true,"auto_accept":true,"complete_flag":"kill_10_monsters","reward":{"buff_id":"growth","buff_stacks":2,"counter_name":"monster_kills","counter_add":5,"story_msg":"你证明了你在黑暗中的价值。","respect":1}}
+]

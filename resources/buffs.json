@@ -19,5 +19,11 @@
   {"id":"curse","display_name":"诅咒","short_name":"咒","duration":5.0,"max_stacks":3,"tick_interval":1.0,"tick_damage":2,"hud_color":[160,40,180]},
   {"id":"lifesteal","display_name":"吸血","short_name":"吸","duration":6.0,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,30,80]},
   {"id":"adrenaline","display_name":"肾上腺素","short_name":"肾","duration":8.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[255,180,50]},
-  {"id":"momentum","display_name":"顺势","short_name":"势","duration":4.0,"max_stacks":5,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,200,40]}
+  {"id":"momentum","display_name":"顺势","short_name":"势","duration":4.0,"max_stacks":5,"tick_interval":0.0,"tick_damage":0,"hud_color":[200,200,40]},
+
+  {"id":"electrified","display_name":"感电","short_name":"电","duration":3.0,"max_stacks":5,"tick_interval":0.5,"tick_damage":4,"hud_color":[200,220,40]},
+  {"id":"frostbite","display_name":"冻伤","short_name":"冻","duration":4.0,"max_stacks":4,"tick_interval":0.7,"tick_damage":3,"hud_color":[150,200,240]},
+  {"id":"deep_wound","display_name":"重伤","short_name":"伤","duration":4.0,"max_stacks":3,"tick_interval":0.8,"tick_damage":6,"hud_color":[200,30,80]},
+  {"id":"shadow_veil","display_name":"暗影面纱","short_name":"暗","duration":3.0,"max_stacks":2,"tick_interval":0.0,"tick_damage":0,"hud_color":[80,40,140]},
+  {"id":"summon_bless","display_name":"召唤祝福","short_name":"召","duration":8.0,"max_stacks":3,"tick_interval":0.0,"tick_damage":0,"hud_color":[100,200,180]}
 ]

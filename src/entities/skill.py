@@ -556,7 +556,209 @@ class TheWorldSkill(ActiveSkill):
         return "__TIME_STOP__"
 
 
-ALL_ACTIVE_SKILLS = [SlashSkill, FireballSkill, SelfHealSkill, TheWorldSkill]
+# ═══════════════════════════════════════════════════════════════
+# G5 sync: 5 new signature skill classes (C++ parity)
+# ═══════════════════════════════════════════════════════════════
+
+class IceNovaSkill(ActiveSkill):
+    """冰爆 — AOE冻结+对已冻结目标碎冰追加伤害"""
+    def __init__(self):
+        super().__init__(name="冰爆", cooldown=6.0, max_level=3, icon_char='I')
+        self._radius = 4.0; self._shatter_bonus = 30
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("freeze", 1, 0.30, BuffTarget.ENEMY)]
+
+    def _on_level_up(self):
+        if self.level == 2: self._base_cooldown = 5.0
+        elif self.level == 3: self._base_cooldown = 4.0
+        self._recalc_cooldown()
+
+    def execute(self, caster, targets: list, game_map) -> str:
+        import math
+        cx, cy = caster.entity.rect.centerx, caster.entity.rect.centery
+        rng = self._radius * 32 * (1.3 if self.level >= 2 else 1.0)
+        base = caster.combat.get_effective_attack() * 2.0 * self.get_power_multiplier()
+        total = 0; extra = ""
+        from src.systems.combat_system import calculate_damage
+        from src.systems.buff_system import apply_buff
+        for t in targets:
+            if not hasattr(t, "combat") or not t.combat.is_alive: continue
+            d = math.hypot(t.entity.rect.centerx - cx, t.entity.rect.centery - cy)
+            if d > rng: continue
+            dmg = calculate_damage(int(base), t.combat.get_effective_defense(AttackType.MAGICAL), AttackType.MAGICAL)
+            #碎冰: 对已冻结目标追加伤害
+            for b in getattr(t, "active_buffs", []):
+                if b.id == "freeze": dmg = dmg * (100 + self._shatter_bonus) // 100; extra = " 碎冰!"; break
+            t.combat.take_damage(dmg); total += dmg
+            if random.random() < 0.30: apply_buff(t, "freeze", 1)
+        return f"冰爆Lv{self.level} 造成{total}伤害{extra}"
+
+    def get_level_bonus_text(self) -> str:
+        return f"Lv{self.level} R{int(self._radius)} {self.cooldown:.1f}s"
+
+class ChainLightningSkill(ActiveSkill):
+    """连锁闪电 — 弹射链N跳, 递减30%"""
+    def __init__(self):
+        super().__init__(name="连锁闪电", cooldown=4.0, max_level=3, icon_char='L')
+        self._bounces = 3; self._decay = 0.30
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("electrified", 1, 0.25, BuffTarget.ENEMY)]
+
+    def _on_level_up(self):
+        if self.level == 2: self._base_cooldown = 3.5
+        elif self.level == 3: self._base_cooldown = 2.8
+        self._recalc_cooldown()
+
+    def execute(self, caster, targets: list, game_map) -> str:
+        import math
+        alive = [t for t in targets if hasattr(t, "combat") and t.combat.is_alive]
+        if not alive: return "连锁闪电: 无目标"
+        pcx, pcy = caster.entity.rect.centerx, caster.entity.rect.centery
+        closest = min(alive, key=lambda t: math.hypot(t.entity.rect.centerx-pcx, t.entity.rect.centery-pcy))
+        total = 0; bounces = self._bounces + (2 if self.level >= 2 else 0)
+        mult = 1.0; prev = closest
+        base = caster.combat.get_effective_attack() * 1.8 * self.get_power_multiplier()
+        from src.systems.combat_system import calculate_damage
+        from src.systems.buff_system import apply_buff
+        for i in range(bounces + 1):
+            if not prev or not prev.combat.is_alive: break
+            dmg = calculate_damage(int(base * mult), prev.combat.get_effective_defense(AttackType.MAGICAL), AttackType.MAGICAL)
+            prev.combat.take_damage(dmg); total += dmg
+            if random.random() < 0.25: apply_buff(prev, "electrified", 1)
+            mult *= (1.0 - self._decay)
+            # find next closest
+            nxt = None; nd = 99999
+            for t in alive:
+                if t is prev: continue
+                d = math.hypot(t.entity.rect.centerx-prev.entity.rect.centerx, t.entity.rect.centery-prev.entity.rect.centery)
+                if d < nd: nd = d; nxt = t
+            prev = nxt
+        return f"连锁闪电Lv{self.level} {bounces}跳 造成{total}伤害"
+
+    def get_level_bonus_text(self) -> str:
+        return f"Lv{self.level} B{self._bounces} {self.cooldown:.1f}s"
+
+class ShadowStrikeSkill(ActiveSkill):
+    """暗影突刺 — 瞬移至目标身后+背刺倍率"""
+    def __init__(self):
+        super().__init__(name="暗影突刺", cooldown=5.0, max_level=3, icon_char='D')
+        self._backstab_mult = 2.5
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("fear", 1, 0.20, BuffTarget.ENEMY)]
+
+    def _on_level_up(self):
+        if self.level == 2: self._base_cooldown = 4.0
+        elif self.level == 3: self._base_cooldown = 3.2
+        self._recalc_cooldown()
+
+    def execute(self, caster, targets: list, game_map) -> str:
+        import math
+        alive = [t for t in targets if hasattr(t, "combat") and t.combat.is_alive]
+        if not alive: return "暗影突刺: 无目标"
+        pcx, pcy = caster.entity.rect.centerx, caster.entity.rect.centery
+        target = min(alive, key=lambda t: math.hypot(t.entity.rect.centerx-pcx, t.entity.rect.centery-pcy))
+        tx, ty = target.entity.rect.centerx, target.entity.rect.centery
+        dx, dy = pcx - tx, pcy - ty
+        length = math.sqrt(dx*dx+dy*dy) or 1
+        behind_x = tx + dx / length * 40 - caster.entity.rect.w // 2
+        behind_y = ty + dy / length * 40 - caster.entity.rect.h // 2
+        old_pos = (caster.entity.position.x, caster.entity.position.y)
+        caster.entity.position.x, caster.entity.position.y = behind_x, behind_y
+        caster.entity.sync_rect()
+        if game_map and not game_map.is_rect_walkable(caster.entity.rect):
+            caster.entity.position.x, caster.entity.position.y = old_pos
+            caster.entity.sync_rect()
+        mult = self._backstab_mult; if self.level >= 2: mult *= 1.5
+        base = caster.combat.get_effective_attack() * 1.8 * self.get_power_multiplier()
+        from src.systems.combat_system import calculate_damage
+        dmg = calculate_damage(int(base * mult), target.combat.get_effective_defense(AttackType.PHYSICAL))
+        target.combat.take_damage(dmg)
+        from src.systems.buff_system import apply_buff
+        if random.random() < 0.20: apply_buff(target, "fear", 1)
+        return f"暗影突刺Lv{self.level} 背刺! 造成{dmg}伤害"
+
+    def get_level_bonus_text(self) -> str:
+        return f"Lv{self.level} x{self._backstab_mult:.0f} {self.cooldown:.1f}s"
+
+class BloodFrenzySkill(ActiveSkill):
+    """血怒 — 自伤→AOE流血→回血"""
+    def __init__(self):
+        super().__init__(name="血怒", cooldown=7.0, max_level=3, icon_char='B')
+        self._hp_cost_pct = 0.10; self._heal_per_hit = 0.05
+        from src.systems.buff_system import BuffTrigger, BuffTarget
+        self.triggers = [BuffTrigger("bleed", 2, 0.60, BuffTarget.ENEMY)]
+
+    def _on_level_up(self):
+        if self.level == 2: self._base_cooldown = 5.5
+        elif self.level == 3: self._base_cooldown = 4.5
+        self._recalc_cooldown()
+
+    def execute(self, caster, targets: list, game_map) -> str:
+        import math
+        hp_cost = int(caster.combat.max_hp * self._hp_cost_pct)
+        caster.combat.current_hp = max(1, caster.combat.current_hp - hp_cost)
+        pcx, pcy = caster.entity.rect.centerx, caster.entity.rect.centery
+        rng = 4.0 * 32
+        total = 0; hit_count = 0
+        base = caster.combat.get_effective_attack() * 1.5 * self.get_power_multiplier()
+        from src.systems.combat_system import calculate_damage
+        from src.systems.buff_system import apply_buff
+        for t in targets:
+            if not hasattr(t, "combat") or not t.combat.is_alive: continue
+            d = math.hypot(t.entity.rect.centerx-pcx, t.entity.rect.centery-pcy)
+            if d > rng: continue
+            dmg = calculate_damage(int(base), t.combat.get_effective_defense(AttackType.PHYSICAL))
+            t.combat.take_damage(dmg); total += dmg; hit_count += 1
+            stacks = 2 if self.level >= 2 else 1
+            apply_buff(t, "bleed", stacks)
+            if self.level >= 3 and t.combat.current_hp <= 0:
+                caster.combat.current_hp = min(caster.combat.current_hp + caster.combat.max_hp, caster.combat.max_hp)
+        heal_per = int(caster.combat.max_hp * self._heal_per_hit) * (2 if self.level >= 2 else 1)
+        healed = caster.combat.heal(hp_cost + heal_per * hit_count)
+        return f"血怒Lv{self.level} 消耗{hp_cost}HP 命中{hit_count}目标 {total}伤害 回复{healed}HP"
+
+    def get_level_bonus_text(self) -> str:
+        return f"Lv{self.level} -{int(self._hp_cost_pct*100)}%HP {self.cooldown:.1f}s"
+
+class SummonSpiritSkill(ActiveSkill):
+    """召唤英灵 — spawn_monster→友方AI"""
+    def __init__(self):
+        super().__init__(name="召唤英灵", cooldown=12.0, max_level=3, icon_char='M')
+
+    def _on_level_up(self):
+        if self.level == 2: self._base_cooldown = 10.0
+        elif self.level == 3: self._base_cooldown = 8.0
+        self._recalc_cooldown()
+
+    def execute(self, caster, targets: list, game_map) -> str:
+        import random, math
+        count = 1; hp_val = 30; atk_val = 8
+        if self.level >= 2: count = 2
+        if self.level >= 3: count = 3; hp_val = int(hp_val * 1.5); atk_val = int(atk_val * 1.3)
+        pcx, pcy = caster.entity.rect.centerx, caster.entity.rect.centery
+        spawned = 0
+        for _ in range(count):
+            sx = pcx + random.randint(-80, 80)
+            sy = pcy + random.randint(-80, 80)
+            if game_map:
+                tx, ty = game_map.pixel_to_tile(sx, sy)
+                if not game_map.is_walkable(tx, ty): continue
+            from src.entities.monster import spawn_monster
+            spirit = spawn_monster(sx, sy, "orc")
+            if not spirit: continue
+            spirit.combat.max_hp = hp_val; spirit.combat.current_hp = hp_val
+            spirit.combat.attack = atk_val
+            spirit.name = "英灵"; spirit.color = (180, 180, 255)
+            spirit.entity.sync_rect()
+            targets.append(spirit); spawned += 1
+        return f"召唤英灵Lv{self.level} 召唤{spawned}只 HP{hp_val} ATK{atk_val}"
+
+    def get_level_bonus_text(self) -> str:
+        return f"Lv{self.level} x{1 if self.level==1 else 2 if self.level==2 else 3} {self.cooldown:.1f}s"
+
+ALL_ACTIVE_SKILLS = [SlashSkill, FireballSkill, SelfHealSkill, TheWorldSkill,
+                     IceNovaSkill, ChainLightningSkill, ShadowStrikeSkill,
+                     BloodFrenzySkill, SummonSpiritSkill]
 ALL_PASSIVE_SKILLS = [IronSkinSkill, BerserkSkill]
 
 

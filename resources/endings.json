@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bad_end",
+    "type": 0,
+    "name": "BAD END",
+    "title": "BAD END",
+    "sky_color": "深红",
+    "final_line": "黑暗吞噬了一切。你在深渊中迷失——成为了它新的狱卒。",
+    "meta_soul_bonus": 5,
+    "meta_knowledge_bonus": 1
+  },
+  {
+    "id": "normal_end",
+    "type": 1,
+    "name": "NORMAL END",
+    "title": "NORMAL END",
+    "sky_color": "灰暗",
+    "final_line": "深渊之主倒下了。黑暗开始褪去——\n但你已被地牢改变，再也无法回到从前。",
+    "meta_soul_bonus": 10,
+    "meta_knowledge_bonus": 2
+  },
+  {
+    "id": "good_end",
+    "type": 2,
+    "name": "GOOD END",
+    "title": "GOOD END",
+    "sky_color": "金色",
+    "final_line": "你救下了能够拯救的灵魂。\n神殿重新亮起了光——虽然微弱，但足以指引后人。",
+    "meta_soul_bonus": 20,
+    "meta_knowledge_bonus": 3
+  },
+  {
+    "id": "true_end",
+    "type": 3,
+    "name": "TRUE END",
+    "title": "TRUE END",
+    "sky_color": "纯白",
+    "final_line": "你战胜了深渊，也战胜了自己。\n守望者的祈祷穿越三千年，终于得到了回应。\n你自由了——真正的自由。",
+    "meta_soul_bonus": 30,
+    "meta_knowledge_bonus": 5
+  },
+  {
+    "id": "secret_end",
+    "type": 4,
+    "name": "ABSOLUTE END",
+    "title": "ABSOLUTE END",
+    "sky_color": "彩虹",
+    "final_line": "你做到了凡人不可能做到的事。\n每一座神殿的灯火都被重新点燃。\n守望者流泪了——三千年来的第一滴泪。",
+    "meta_soul_bonus": 50,
+    "meta_knowledge_bonus": 10
+  }
+]

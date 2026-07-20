@@ -1,0 +1,41 @@
+[
+  {"id":"sk_default","boss_floor":5,"stage":"chapter_1","phase2_text":"你变强了……但你也会像我一样。"},
+  {"id":"sk_blood","boss_floor":5,"stage":"chapter_1","required_flag":"blood_ritual","intro_text":"我闻到了鲜血——看来深渊已经接受了你。","phase2_text":"你的血……和我的血……已经分不清了。","death_text":"用鲜血换来的胜利——真的是胜利吗？","once":true},
+  {"id":"sk_curse","boss_floor":5,"stage":"chapter_1","required_flag":"accepted_curse","intro_text":"诅咒？很好。你已经属于这里了。","phase2_text":"黑暗不会只满足于一个灵魂。","once":true},
+  {"id":"sk_prisoner","boss_floor":5,"stage":"chapter_1","required_flag":"saved_prisoner","intro_text":"你救了那个囚犯？他已经被关押了三十年——而你只用了三秒。","once":true},
+  {"id":"sk_berserker","boss_floor":5,"stage":"chapter_1","required_build":"berserker","intro_text":"很好。来。面对面。","phase2_text":"你终于学会了用剑——但你永远学不会放手。"},
+  {"id":"sk_poison","boss_floor":5,"stage":"chapter_1","required_build":"poison_master","intro_text":"毒？真是令人怀念。我曾被毒死过一次。"},
+
+  {"id":"fd_default","boss_floor":10,"stage":"chapter_2","phase2_text":"火焰吞噬了你的武器。接下来——吞噬你。","death_text":"火焰终于熄灭了……但这个世界的火焰永远不会真正熄灭。"},
+  {"id":"fd_priest","boss_floor":10,"stage":"chapter_2","required_flag":"saved_priest","intro_text":"那个祭司……居然还活着。他给了你力量——但你承受得起吗？","phase2_text":"神官的祈祷在这里是无效的——这里是烈焰的神殿。","once":true},
+  {"id":"fd_blood","boss_floor":10,"stage":"chapter_2","required_flag":"blood_ritual","intro_text":"你献祭过自己的血？有趣。让我看看它有多烫。","once":true},
+  {"id":"fd_fire","boss_floor":10,"stage":"chapter_2","required_build":"fire_mage","intro_text":"火焰？你根本不配使用它。","phase2_text":"你的火焰——太冷了。","death_text":"也许……你比我更适合驾驭火焰。"},
+  {"id":"fd_time","boss_floor":10,"stage":"chapter_2","required_build":"time_master","intro_text":"时间？你以为你能改变什么？","phase2_text":"这里的火已经烧了一千年——时间救不了你。"},
+
+  {"id":"dl_default","boss_floor":15,"stage":"final","intro_text":"你终于来了。我等了你很久——我已经很久没有新的碎片了。","phase2_text":"你感受到了吗？这是你体内的黑暗——它渴望被释放。","death_text":"阳光照进来了……这是我死前最后一眼看到的东西吗？"},
+  {"id":"dl_priest","boss_floor":15,"stage":"final","required_flag":"saved_priest","relation_threshold":3,"npc_id":70,"intro_text":"泰伦斯……那个傻瓜还在祈祷？三千年前我也听过他的祈祷——毫无用处。","once":true},
+  {"id":"dl_prisoner","boss_floor":15,"stage":"final","required_flag":"saved_prisoner","intro_text":"你救了那个囚犯？你知道他为什么会被关进来吗？因为他杀了一个国王。","death_text":"连你救了的人都会成为我——这就是结局。","once":true},
+  {"id":"dl_boss1","boss_floor":15,"stage":"final","required_flag":"boss1_defeated","intro_text":"你杀了狱卒。你杀了火魔。你很强——但你不是第一个。"},
+  {"id":"dl_boss2","boss_floor":15,"stage":"final","required_flag":"boss2_defeated","intro_text":"两个了。只剩你了，还有我。","phase2_text":"你的每一次胜利——都在给我力量。"},
+  {"id":"dl_blood","boss_floor":15,"stage":"final","required_flag":"blood_ritual","intro_text":"血祭……你已经成了深渊的一部分。来吧——回来。","phase2_text":"你的血液里流淌着我。你不可能打败你自己。","death_text":"黑暗说了一声谢谢——然后化为了虚无。","once":true},
+  {"id":"dl_merchant","boss_floor":15,"stage":"final","required_flag":"merchant_killed","intro_text":"连商人都不放过。你比怪物更像怪物。","once":true},
+  {"id":"dl_poison","boss_floor":15,"stage":"final","required_build":"poison_master","intro_text":"毒？你以为毒能伤到我？我就来自比毒更古老的东西。","phase2_text":"你一直在使用毒——但你有没有想过——你被感染了吗？"},
+  {"id":"dl_time","boss_floor":15,"stage":"final","required_build":"time_master","intro_text":"时间？连神都无法控制时间——你能吗？","phase2_text":"你以为时间是你的武器——但它只是我的一根手指。"},
+  {"id":"dl_berserker","boss_floor":15,"stage":"final","required_build":"berserker","intro_text":"狂战士？用愤怒来填补恐惧。这是最古老的战术。"},
+  {"id":"dl_all_boss","boss_floor":15,"stage":"final","required_flag":"all_boss_defeated","intro_text":"狱卒。火魔。深渊之主。三个——你全都杀了。\n现在唯一的狱卒——是你。","death_text":"你以为你赢了——但每一次胜利都让我的碎片更多。"},
+
+  {"id":"nec_default","boss_floor":5,"stage":"chapter_1","intro_text":"亡者们，起来吧。你们的新同伴来了。","phase2_text":"死亡不是终点——是我的兵源。","death_text":"原来……死亡也可以结束。"},
+  {"id":"nec_poison","boss_floor":5,"stage":"chapter_1","required_build":"poison_master","intro_text":"毒？有趣。但亡灵不怕毒。","phase2_text":"你身上的那股味道……和我召唤的东西很像。"},
+  {"id":"nec_berserker","boss_floor":5,"stage":"chapter_1","required_build":"berserker","intro_text":"你的刀很快。但我的亡者比你更快。"},
+  {"id":"nec_support","boss_floor":5,"stage":"chapter_1","required_build":"support","intro_text":"药剂救不了你。死人不需要药剂。"},
+
+  {"id":"golem_default","boss_floor":10,"stage":"chapter_2","intro_text":"……。 （魔像没有嘴，只有沉闷的震动声）","phase2_text":"魔像开始裂开——但仍在战斗。","death_text":"魔像化为了碎石。一切归于沉寂。"},
+  {"id":"golem_berserker","boss_floor":10,"stage":"chapter_2","required_build":"berserker","intro_text":"你只是依赖外物——你的武器伤不了我。"},
+  {"id":"golem_fire","boss_floor":10,"stage":"chapter_2","required_build":"fire_mage","intro_text":"火没有用。我是熔岩的孩子。"},
+  {"id":"golem_support","boss_floor":10,"stage":"chapter_2","required_build":"support","intro_text":"治疗？这里没有你治得好的东西。"},
+
+  {"id":"gen_poison","boss_floor":0,"stage":"chapter_1","required_build":"poison_master","intro_text":"毒药？你离我想象的还要黯淡。"},
+  {"id":"gen_berserker","boss_floor":0,"stage":"chapter_1","required_build":"berserker","intro_text":"你的刀很快。"},
+  {"id":"gen_support","boss_floor":0,"stage":"chapter_1","required_build":"support","intro_text":"药剂救不了你。"},
+  {"id":"gen_projectile","boss_floor":0,"stage":"chapter_1","required_build":"projectile","intro_text":"你只是依赖外物。"}
+]

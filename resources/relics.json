@@ -32,6 +32,44 @@
   {"id":"chaos_dice","name":"混沌骰子","short_name":"混","desc":"使用技能时30%概率不消耗冷却","rarity":"epic","param":0.30,"hud_color":[255,100,200]},
 
   {"id":"infinity_orb","name":"无限之球","short_name":"∞","desc":"所有技能等级+1","rarity":"legendary","param":1,"hud_color":[255,220,40]},
-  {"id":"dragon_heart","name":"龙之心","short_name":"龙","desc":"攻击+15% 生命+30 防御+8 移速+8%","rarity":"legendary","param":0.15,"param2":30,"hud_color":[255,100,20]},
-  {"id":"god_hand","name":"神之手","short_name":"神","desc":"首次死亡时复活并恢复满血(每局1次)","rarity":"legendary","param":1.0,"hud_color":[255,240,200]}
+  {"id":"dragon_heart","name":"龙之心","short_name":"龙","desc":"攻击+15% 生命+30 防御+8 移速+8%","rarity":"legendary","param":0.15,"param2":30,"hud_color":[255,100,20],"tags":["melee","fire"]},
+  {"id":"god_hand","name":"神之手","short_name":"神","desc":"首次死亡时复活并恢复满血(每局1次)","rarity":"legendary","param":1.0,"hud_color":[255,240,200],"tags":["defense","support"]},
+
+  {"id":"frozen_heart","name":"冰霜之心","short_name":"霜","desc":"攻击时25%概率附带冻伤","rarity":"rare","param":0.25,"hud_color":[120,200,240],"tags":["ice","magic"]},
+  {"id":"glacier_shard","name":"冰川碎片","short_name":"冰","desc":"冰系技能伤害+20%","rarity":"epic","param":0.20,"hud_color":[100,220,255],"tags":["ice","aoe"]},
+  {"id":"winter_crown","name":"寒冬王冠","short_name":"冬","desc":"冻结持续时间+50% 被冻结目标受到+30%伤害","rarity":"epic","param":0.50,"param2":30,"hud_color":[80,200,255],"tags":["ice","dot"]},
+  {"id":"absolute_zero","name":"绝对零度","short_name":"零","desc":"冰系技能有10%概率直接击杀冻结目标","rarity":"legendary","param":0.10,"hud_color":[60,180,255],"tags":["ice","heavy"]},
+
+  {"id":"thunder_orb","name":"雷霆宝珠","short_name":"雷","desc":"击杀敌人→30%概率释放连锁闪电","rarity":"rare","param":0.30,"hud_color":[220,220,40],"tags":["lightning","aoe"]},
+  {"id":"storm_caller","name":"风暴呼唤","short_name":"暴","desc":"每10秒自动对最近敌人释放闪电","rarity":"epic","param":10.0,"hud_color":[255,240,60],"tags":["lightning","projectile"]},
+  {"id":"lightning_rod","name":"避雷针","short_name":"针","desc":"闪电伤害+30% 感电概率+20%","rarity":"rare","param":0.30,"hud_color":[240,200,40],"tags":["lightning","dot"]},
+  {"id":"divine_storm","name":"天罚风暴","short_name":"罚","desc":"感电触发时50%概率连锁至所有敌人","rarity":"legendary","param":0.50,"hud_color":[255,255,80],"tags":["lightning","aoe","projectile"]},
+
+  {"id":"crimson_blade","name":"猩红之刃","short_name":"猩","desc":"流血伤害+40%","rarity":"rare","param":0.40,"hud_color":[200,30,60],"tags":["bleed","melee"]},
+  {"id":"blood_pool","name":"血池","short_name":"池","desc":"击杀流血目标→恢复10%最大HP","rarity":"epic","param":0.10,"hud_color":[180,20,40],"tags":["bleed","heal"]},
+  {"id":"sacrificial_dagger","name":"血祭匕首","short_name":"祭","desc":"攻击消耗3%HP 造成40%额外流血","rarity":"rare","param":0.40,"hud_color":[160,20,50],"tags":["bleed","combo"]},
+  {"id":"hemoplague","name":"血疫","short_name":"疫","desc":"流血可传染(50%概率跳向附近敌人)","rarity":"legendary","param":0.50,"hud_color":[140,10,30],"tags":["bleed","aoe","dot"]},
+
+  {"id":"shadow_cloak","name":"暗影斗篷","short_name":"影","desc":"首次进入楼层时获得3秒隐身","rarity":"rare","param":3.0,"hud_color":[60,20,120],"tags":["time","melee"]},
+  {"id":"assassin_mark","name":"刺客印记","short_name":"刺","desc":"对隐身目标造成的伤害×2.5","rarity":"epic","param":2.5,"hud_color":[100,30,180],"tags":["time","combo"]},
+  {"id":"night_veil","name":"夜幕","short_name":"夜","desc":"生命低于30%→永久获得暗影面纱","rarity":"epic","param":0.30,"hud_color":[40,15,100],"tags":["time","defense"]},
+
+  {"id":"bastion_shield","name":"堡垒之盾","short_name":"堡","desc":"每层防御提升额外+1%护盾","rarity":"common","param":0.01,"hud_color":[140,160,200],"tags":["defense","support"]},
+  {"id":"unyielding","name":"不屈","short_name":"屈","desc":"受到致死伤害→保留1HP(每层3次)","rarity":"epic","param":3.0,"hud_color":[180,180,200],"tags":["defense","heal"]},
+  {"id":"iron_determination","name":"钢铁意志","short_name":"钢","desc":"防御+10 每有一个防御buff额外+2","rarity":"rare","param":10.0,"hud_color":[160,160,180],"tags":["defense","heavy"]},
+  {"id":"phoenix_rebirth","name":"凤凰涅槃","short_name":"凤","desc":"死亡后原地复活(每局1次) 复活后3秒无敌","rarity":"legendary","param":3.0,"hud_color":[255,150,60],"tags":["defense","heal","support"]},
+
+  {"id":"soul_chain","name":"灵魂锁链","short_name":"链","desc":"召唤物攻击力+25%","rarity":"common","param":0.25,"hud_color":[120,200,160],"tags":["summon","support"]},
+  {"id":"necromancer_tome","name":"亡灵之书","short_name":"书","desc":"击杀敌人→15%概率将其复活为友方","rarity":"epic","param":0.15,"hud_color":[100,180,140],"tags":["summon","aoe"]},
+  {"id":"swarm_queen","name":"虫群女王","short_name":"群","desc":"召唤物数量+2 召唤物死亡时释放毒雾","rarity":"epic","param":2.0,"hud_color":[80,220,120],"tags":["summon","poison"]},
+  {"id":"spirit_army","name":"亡灵大军","short_name":"军","desc":"进入新楼层→自动召唤3只亡灵","rarity":"legendary","param":3.0,"hud_color":[60,200,100],"tags":["summon","support","aoe"]},
+
+  {"id":"ignition_ring","name":"引燃之戒","short_name":"燃","desc":"灼烧持续时间+30% 灼烧层数上限+2","rarity":"rare","param":0.30,"hud_color":[255,120,30],"tags":["fire","dot"]},
+  {"id":"inferno_core","name":"炼狱核心","short_name":"炎","desc":"火系击杀→50%概率产生火焰新星","rarity":"epic","param":0.50,"hud_color":[255,80,10],"tags":["fire","aoe"]},
+
+  {"id":"venom_vein","name":"毒脉","short_name":"脉","desc":"中毒每跳伤害+2","rarity":"rare","param":2.0,"hud_color":[80,200,80],"tags":["poison","dot"]},
+  {"id":"plague_heart","name":"瘟疫之心","short_name":"疫","desc":"周围敌人自动获得1层中毒","rarity":"epic","param":1.0,"hud_color":[60,180,60],"tags":["poison","aoe"]},
+
+  {"id":"chrono_stone","name":"时之石","short_name":"石","desc":"技能冷却-12%","rarity":"common","param":0.12,"hud_color":[160,200,240],"tags":["time","support"]},
+  {"id":"paradox_orb","name":"悖论宝珠","short_name":"悖","desc":"时停结束后全技能冷却减半","rarity":"epic","param":0.50,"hud_color":[180,210,255],"tags":["time","aoe"]}
 ]

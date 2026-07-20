@@ -53,9 +53,18 @@ def main():
     from src.systems.buff_system import load_buff_defs
     init_bgm()
     init_sfx()
+    print("[Init] Loading data files...")
+    # G5 sync: load all JSON modules
     load_buff_defs("resources/buffs.json")
     from src.systems.relic_system import load_relic_defs
     load_relic_defs("resources/relics.json")
+    from src.game.enemy_defs import load_enemy_defs
+    load_enemy_defs("resources/enemies.json")
+    try:
+        from src.game.skill_defs import load_skill_defs
+        load_skill_defs("resources/skills.json")
+    except: pass
+    print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)
     from src.scenes.title_scene import TitleScene

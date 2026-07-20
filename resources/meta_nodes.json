@@ -1,0 +1,12 @@
+[
+  {"id":"hp_bonus",    "name":"生命力",   "description":"+2% 最大HP",        "max_level":5, "cost_base":2, "cost_scale":2},
+  {"id":"atk_bonus",   "name":"攻击力",   "description":"+2% 攻击力",        "max_level":5, "cost_base":2, "cost_scale":2},
+  {"id":"gold_start",  "name":"初始金币", "description":"+15 初始金币",       "max_level":5, "cost_base":2, "cost_scale":3},
+  {"id":"potion_start","name":"初始药水", "description":"+1 初始药水",        "max_level":3, "cost_base":4, "cost_scale":4},
+  {"id":"relic_bonus", "name":"圣物掉落", "description":"+2% 圣物掉率",       "max_level":5, "cost_base":3, "cost_scale":2},
+  {"id":"exp_bonus",   "name":"经验",     "description":"+3% 经验获取",       "max_level":5, "cost_base":2, "cost_scale":3},
+  {"id":"buff_dur",    "name":"Buff持续", "description":"+5% Buff时间",       "max_level":3, "cost_base":4, "cost_scale":3},
+  {"id":"skill_cd",    "name":"技能冷却", "description":"-2% 冷却缩减",       "max_level":5, "cost_base":3, "cost_scale":3},
+  {"id":"build_speed", "name":"构筑速度", "description":"+5% Build成型速度",  "max_level":3, "cost_base":3, "cost_scale":4},
+  {"id":"crit_bonus",  "name":"暴击率",   "description":"+1.5% 暴击率",       "max_level":5, "cost_base":3, "cost_scale":3}
+]
