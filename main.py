@@ -72,6 +72,8 @@ def main():
     load_hazard_defs("resources/hazards.json")
     from src.game.biome_event import load_biome_event_defs
     load_biome_event_defs("resources/biome_events.json")
+    from src.game.encounter import load_encounter_defs
+    load_encounter_defs("resources/encounters.json")
     print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)

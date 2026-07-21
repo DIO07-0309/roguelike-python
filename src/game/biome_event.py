@@ -73,95 +73,12 @@ def pick_event_for_biome(biome_id: str) -> BiomeEventDef | None:
 # ══════════════════════════════════════════════════════════════
 
 def execute_effect(effect: str, player, monsters: list, game_map) -> str:
-    """Execute a reward effect. Returns a brief result message."""
-    if effect == "none":
-        return ""
-    parts = effect.split(":")
-    kind = parts[0]
-    try:
-        if kind == "buff":
-            name, stacks = parts[1], int(parts[2])
-            from src.systems.buff_system import apply_buff
-            apply_buff(player, name, stacks)
-            return f"获得了 {stacks} 层 {name}"
-        elif kind == "relic":
-            count = int(parts[1])
-            from src.systems.relic_system import try_grant_random_relic
-            msgs = []
-            for _ in range(count):
-                m = try_grant_random_relic(player, 1.0)
-                if m: msgs.append(m)
-            return "获得了圣物: " + ", ".join(msgs) if msgs else "圣物获取失败"
-        elif kind == "equipment":
-            rarity_str = parts[1]  # "rare"
-            from src.entities.item import generate_random_item, Rarity
-            item = generate_random_item()
-            tries = 0
-            target = {"rare": Rarity.RARE, "epic": Rarity.EPIC, "legendary": Rarity.LEGENDARY}
-            tgt = target.get(rarity_str, Rarity.RARE)
-            while item and tries < 10:
-                if item.rarity.value >= tgt.value:
-                    break
-                item = generate_random_item()
-                tries += 1
-            if item and player.inventory.add(item, player):
-                return f"获得了 {item.name}"
-            return "装备获取失败——背包已满"
-        elif kind == "skill_level":
-            levels = int(parts[1])
-            active = player.skills.active_skills
-            if not active: return "没有可升级的技能"
-            sk = random.choice(active)
-            for _ in range(levels):
-                if sk.level < sk.max_level:
-                    sk._on_level_up(); sk.level += 1
-            return f"{sk.name} 提升了 {levels} 级"
-        elif kind == "heal":
-            pct = int(parts[1])
-            amt = max(1, player.combat.max_hp * pct // 100)
-            player.combat.heal(amt)
-            return f"恢复了 {amt} HP"
-    except Exception as e:
-        return f"效果执行失败: {e}"
-    return ""
+    """G6.5: delegate to encounter.py unified effect resolver."""
+    from src.game.encounter import execute_effect as _exec
+    return _exec(effect, player, monsters, game_map)
 
 
 def execute_risk(risk: str, player, monsters: list, game_map) -> str:
-    """Execute a risk cost. Returns a brief result message."""
-    if risk == "none":
-        return ""
-    parts = risk.split(":")
-    kind = parts[0]
-    try:
-        if kind == "spawn":
-            enemy_id, count = parts[1], int(parts[2])
-            from src.entities.monster import spawn_monster
-            px, py = player.entity.position.x, player.entity.position.y
-            spawned = 0
-            for _ in range(count * 3):
-                if spawned >= count: break
-                off_x, off_y = random.randint(-4, 4), random.randint(-4, 4)
-                tx = int((px + off_x * 32) // 32)
-                ty = int((py + off_y * 32) // 32)
-                if game_map and game_map.is_walkable(tx, ty):
-                    sx, sy = game_map.tile_to_pixel(tx, ty)
-                    m = spawn_monster(sx, sy, enemy_id)
-                    monsters.append(m)
-                    spawned += 1
-            return f"出现了 {spawned} 只 {enemy_id}" if spawned else ""
-        elif kind == "hp_loss":
-            pct = int(parts[1])
-            loss = max(1, player.combat.current_hp * pct // 100)
-            player.combat.take_damage(loss)
-            return f"失去了 {loss} HP"
-        elif kind == "debuff":
-            name, stacks = parts[1], int(parts[2])
-            from src.systems.buff_system import apply_buff
-            apply_buff(player, name, stacks)
-            return f"受到 {stacks} 层 {name}"
-        elif kind == "confuse":
-            duration = int(parts[1])
-            return f"困惑 {duration}s"
-    except Exception as e:
-        return f"风险执行失败: {e}"
-    return ""
+    """G6.5: delegate to encounter.py unified risk resolver."""
+    from src.game.encounter import execute_risk as _exec
+    return _exec(risk, player, monsters, game_map)
