@@ -283,7 +283,11 @@ roguelike/
 ├── config.py             # 全局配置常量
 ├── src/
 │   ├── core/             # 引擎框架
-│   │   └── scene.py      # Scene 基类（enter/exit/update/render）
+│   │   ├── scene.py      # Scene 基类（enter/exit/update/render）
+│   │   ├── event_bus.py  # G6: EventBus — 30事件类型 pub/sub
+│   │   ├── timeline.py   # G5.8.6: Timeline — delay/duration/callback序列
+│   │   ├── replay/       # G6: ReplayRecorder + ReplayPlayer
+│   │   └── sim/          # G6: SimAI + SimRunner 自动平衡测试
 │   ├── entities/         # 实体模块
 │   │   ├── entity.py     # 实体基类 (位置+碰撞框)
 │   │   ├── components.py # CombatStats + RelicInstance
@@ -303,17 +307,21 @@ roguelike/
 │   ├── game/             # D1-D6: 游戏配置与子系统
 │   │   ├── floor_config.py      # FloorConfig + FloorNarrative 15层数据
 │   │   ├── build_tag.py         # BuildTag 标签枚举 (19种)
-│   │   ├── build_score.py       # BuildScore + BuildType 六流派判定
-│   │   ├── event_system.py      # EventType (10种) + DungeonEvent
+│   │   ├── build_score.py       # BuildScore + BuildType 12流派判定
+│   │   ├── build_theme.py       # G5.8.2: BuildTheme 12预设主题色 → dmg 3-tier
+│   │   ├── enemy_defs.py        # G5: EnemyDef — enemies.json 31种敌人
+│   │   ├── skill_defs.py         # G5: SkillDef — skills.json 20技能定义
+│   │   ├── event_system.py      # D4: EventType (10种) + DungeonEvent
 │   │   ├── world_state.py       # WorldState + WorldFlag 标志位
 │   │   ├── growth_curve.py      # GrowthCurve 15层难度曲线
 │   │   ├── boss_narrative.py    # BossDialogue 自适应对话
 │   │   ├── meta_progression.py  # MetaProgression + RunSummary
 │   │   └── ending_director.py   # EndingDirector 五结局判定
-│   ├── directors/        # D0-D6: Director 编排层
+│   ├── directors/        # D0-D6/G5.8: Director 编排 + Presentation 调度
 │   │   ├── boss_system_director.py
 │   │   ├── gameplay_system_director.py
-│   │   ├── presentation_system_director.py
+│   │   ├── presentation_system_director.py  # G5.8.7: dispatch() 统一入口
+│   │   ├── audio_director.py               # G5.8.4: crossfade/Phase2 cue/ducking
 │   │   └── game_flow_director.py
 │   ├── scenes/           # 场景模块
 │   │   ├── title_scene.py        # 标题画面 (粒子 + 菜单 + 操作说明)
@@ -331,11 +339,16 @@ roguelike/
 │   ├── ui_helpers.py     # draw_panel/glow_text/progress_bar/Particle
 │   ├── fx_engine.py      # VFX: pulse/arc/bolt/spark/slash
 │   ├── bgm_engine.py     # 4支BGM (和弦+旋律+低音+鼓轨)
-│   ├── sfx_engine.py     # 8SFX (程序合成 + jojo_timestop.mp3)
+│   ├── sfx_engine.py     # 13种SFX (程序合成 + jojo_timestop.mp3)
 │   └── tutorial.py       # 教程引导逻辑
 ├── resources/            # JSON 资源配置
-│   ├── buffs.json        # Buff 配置 (5种)
-│   └── relics.json       # Relic 配置 (11种 + rarity)
+│   ├── vfx_recipes.json  # G5.8.5: 12 VFX recipes + 11 presets + staged delays
+│   ├── buffs.json        # Buff 配置 (25种)
+│   ├── relics.json       # Relic 配置 (63种)
+│   ├── enemies.json      # 敌人配置 (31种)
+│   ├── bosses.json       # Boss 配置 (6种)
+│   ├── skills.json       # 技能配置 (20种)
+│   └── ... (共11个JSON)
 ├── saves/                # 存档 (save.json)
 │   └── save_manager.py   # JSON 序列化/反序列化
 ├── assets/               # 外部资源
@@ -380,7 +393,13 @@ roguelike/
 | D5  | BossSystemDirector 生命周期 + Phase2/LastStand/Death 通知 | ✅ |
 | D6  | MetaProgression 局外成长 + EndingDirector 五结局 + RunSummary 统计 | ✅ |
 | G5  | C++同期同步: +5技能行为类 +AIArchetype +Boss Phase2(6Boss) +JSON全量 | ✅ |
-| G5.8 | Presentation同步: BuildTheme(12预设) + VFX Recipes(12配方) + Camera(震动/冲刺/缩放) + AudioDirector(Boss Phase2) + Timeline | ✅ |
+| G5.8.2 | BuildTheme: 7-field struct + 12 presets + dmg_color_for() 3-tier | ✅ |
+| G5.8.3 | Camera: shake/dash offset/boss landing zoom | ✅ |
+| G5.8.4 | Audio Director: crossfade + boss Phase2 cue + BGM ducking | ✅ |
+| G5.8.5 | VFX Recipes: vfx_recipes.json (12 recipes/11 presets) + play_recipe() | ✅ |
+| G5.8.6 | Timeline: delay/duration/callback sequenced events + include() | ✅ |
+| G5.8.7 | Presentation Integration: PresentationEvent + dispatch() unified pipeline | ✅ |
+| G5.8.8 | Timeline Presentation: 12 recipes with staged delays | ✅ |
 
 ---
 
@@ -445,6 +464,26 @@ roguelike/
 | 文件 | 说明 |
 |------|------|
 | `src/core/timeline.py` | Timeline + TimelineEvent — delay/duration/callback序列; include() 组合复用; register_timeline_recipe() 命名注册; 内置boss_intro/level_up配方 |
+
+### G5.8.7 Presentation Integration
+| 文件 | 说明 |
+|------|------|
+| `src/directors/presentation_system_director.py` | +PresentationEvent + dispatch() 统一分发; 8技能→recipe映射表 (数据驱动, 删if/elif链) |
+| `src/directors/audio_director.py` | +on_presentation_event() 统一SFX入口; +BGM自动ducking |
+| `src/scenes/game_scene.py` | 删除 _add_skill_effect(); -30 处直接耦合; BGM走crossfade_to() |
+| `resources/vfx_recipes.json` | +sfx/hit_sfx/camera_shake 字段 (recipe自描述) |
+
+**核心**：Gameplay→Presentation 30 处直接调用 → 1 个 `dispatch(PresentationEvent)` 入口。
+BuildTheme 为所有视觉风格的唯一来源，零硬编码 preset。
+
+### G5.8.8 Timeline Presentation
+| 文件 | 说明 |
+|------|------|
+| `resources/vfx_recipes.json` | 12 recipe 全量 `delay` 字段 — IceNova: 0ms ring→120ms explosion→250ms shatter→350ms flash |
+| `src/fx_engine.py` | +recipe_to_timeline() 延迟步骤→Timeline; _make_step_effects() 步骤→效果重构 |
+| `src/directors/presentation_system_director.py` | +bind_effects_target() + _active_timelines管理 + tick()推进; dispatch()自动分离即时/延迟 |
+
+**效果**：Boss Phase2 从瞬间全开 → 0ms freeze→80ms flash→250ms roar→400ms shockwave→700ms zoom wave
 
 
 ---
