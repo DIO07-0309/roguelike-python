@@ -142,36 +142,11 @@ def get_registered_recipes() -> list[str]:
     return list(_timeline_recipes.keys())
 
 
-# ══════════════════════════════════════════════════════════════
-#  Built-in recipes
-# ══════════════════════════════════════════════════════════════
+# ── G6.4: Register built-in recipes from external callbacks ──
 
-def _make_boss_intro_timeline(scene) -> Timeline:
-    """Boss intro sequence: shake → VFX burst → sound."""
-    tl = Timeline("boss_intro")
-    tl.add(0.0, 0.15, lambda: scene.presentation.trigger_shake(6))
-    tl.add(0.15, 0.35, lambda: scene.engine._attack_effects.extend(
-        __import__("src.fx_engine", fromlist=["play_recipe"]).play_recipe(
-            "boss_phase2", 480, 320, preset="fire")))
-    tl.add(0.0, 0.4, lambda: __import__("src.sfx_engine", fromlist=["play_sfx"]).play_sfx("hit", 0.9))
-    return tl
-
-
-def _make_level_up_timeline(scene) -> Timeline:
-    """Level-up sequence: sparkle VFX + sound."""
-    tl = Timeline("level_up")
-    pl = scene.engine.player
-    cx = pl.entity.rect.centerx if pl else 480
-    cy = pl.entity.rect.centery if pl else 320
-    tl.add(0.0, 0.4, lambda: scene.engine._attack_effects.extend(
-        __import__("src.fx_engine", fromlist=["play_recipe"]).play_recipe(
-            "level_up", cx, cy, preset="heal")))
-    tl.add(0.0, 0.5, lambda: __import__("src.sfx_engine", fromlist=["play_sfx"]).play_sfx("levelup", 0.8))
-    return tl
-
-
-register_timeline_recipe("boss_intro", lambda scene=None:
-    _make_boss_intro_timeline(scene) if scene else Timeline("boss_intro"))
-register_timeline_recipe("level_up", lambda scene=None:
-    _make_level_up_timeline(scene) if scene else Timeline("level_up"))
+def register_recipe(name: str, factory):
+    """G6.4: external modules register timeline factories.
+    Factory receives no args — it creates and returns a Timeline.
+    """
+    _timeline_recipes[name] = factory
 

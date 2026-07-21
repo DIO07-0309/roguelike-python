@@ -70,6 +70,8 @@ def main():
     load_landmark_defs("resources/landmarks.json")
     from src.game.hazard import load_hazard_defs
     load_hazard_defs("resources/hazards.json")
+    from src.game.biome_event import load_biome_event_defs
+    load_biome_event_defs("resources/biome_events.json")
     print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)

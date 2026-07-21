@@ -1,0 +1,8 @@
+[
+  {"id":"prisoner_rescue","biome":"forgotten_prison","weight":25,"narrative":"一间牢房里蜷缩着一个瘦弱的身影，他看到你时眼睛亮了起来。","choices":[{"text":"释放囚徒","effect":"buff:attack_up:2","risk":"spawn:elite_orc:1","message":"囚徒感激地给了你一个护符——但同时惊动了守卫。"},{"text":"无视他","effect":"none","risk":"none","message":"你假装没有看到牢房里伸出的手。"}]},
+  {"id":"execution_ground","biome":"forgotten_prison","weight":20,"narrative":"绞刑架上还挂着生锈的铁链。地面上隐隐发着暗光——似乎埋着什么东西。","choices":[{"text":"亵渎刑场","effect":"relic:1","risk":"debuff:curse:2","message":"你从绞刑架下找到了一枚遗物，但死者的怨念缠上了你。"},{"text":"绕行","effect":"none","risk":"none","message":"你绕过了这片不祥之地。"}]},
+  {"id":"forge_of_fire","biome":"ash_volcano","weight":25,"narrative":"一座巨大的熔炉嵌在火山岩壁中，炉火仍然燃烧着——这是一个上古铁匠留下的。","choices":[{"text":"使用熔炉锻造","effect":"equipment:rare","risk":"hp_loss:15","message":"你用熔岩的热量重铸了一件装备——但手臂被严重灼伤。"},{"text":"看一眼就走","effect":"none","risk":"none","message":"你敬畏地看了一眼神器熔炉，继续赶路。"}]},
+  {"id":"void_whisper","biome":"void_abyss","weight":25,"narrative":"从裂缝中传来轻柔的低语——它在向你承诺力量。","choices":[{"text":"倾听低语","effect":"skill_level:1","risk":"confuse:5","message":"低语在你脑中回荡——你突然理解了某种更深奥的技艺。"},{"text":"捂住耳朵","effect":"none","risk":"none","message":"你捂住耳朵快步离开那道裂缝。"}]},
+  {"id":"sacrificial_altar","biome":"void_abyss","weight":20,"narrative":"黑色石板上刻着一行字：「以命换命。」两件圣物悬浮在祭坛上方。","choices":[{"text":"献祭一半生命","effect":"relic:2","risk":"hp_loss:50","message":"祭坛吞噬了你的血液——两件圣物在光芒中浮现。"},{"text":"拒绝献祭","effect":"none","risk":"none","message":"你转身离开了祭坛。"}]},
+  {"id":"collapsed_passage","biome":"forgotten_prison","weight":15,"narrative":"一段走廊被落石半埋。缝隙中透出微弱的金光。","choices":[{"text":"挖掘通道","effect":"equipment:rare","risk":"hp_loss:10","message":"你从碎石中挖出了一件古老的武器——但手掌被锋利的石头划破。"},{"text":"继续前进","effect":"none","risk":"none","message":"你跨过碎石继续前进。"}]}
+]

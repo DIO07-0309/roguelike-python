@@ -10,7 +10,7 @@ Architecture:
 """
 
 from dataclasses import dataclass, field
-from src.game.build_theme import BuildTheme, get_active_theme, DEFAULT_THEME
+from src.game.build_theme import BuildTheme, get_theme_for_build_type, DEFAULT_THEME
 
 
 # ══════════════════════════════════════════════════════════════
@@ -317,8 +317,9 @@ class PresentationSystemDirector:
 
     # ── BuildTheme ────────────────────────────────────────
 
-    def update_theme(self, player) -> bool:
-        new_theme = get_active_theme(player)
+    def update_theme(self, build_type) -> bool:
+        """G6.4: receive BuildType from GameScene (zero Gameplay dependency)."""
+        new_theme = get_theme_for_build_type(build_type)
         changed = new_theme.name != self._active_theme.name
         self._active_theme = new_theme
         return changed

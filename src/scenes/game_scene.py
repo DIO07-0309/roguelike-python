@@ -54,10 +54,12 @@ class GameScene(Scene):
 
     def __init__(self, engine):
         super().__init__(engine)
-        self._state = "playing"   # playing | boss_intro | boss_cinematic
+        self._state = "playing"   # playing | boss_intro | boss_cinematic | biome_event
         self._last_biome_id = ""               # G6.1: biome boundary detection
         self._hazard_timers: dict = {}         # G6.3: hazard cooldowns per landmark
         self._hazard_confused: float = 0.0     # G6.3: confuse timer
+        self._pending_event = None             # G6.4: active biome event
+        self._event_result: list = []          # G6.4: result messages to display
         self._show_relic_panel = False         # B12: R 面板开关
         self._shown_relic_hint = False         # B12.5: 首次 relic 提示
         # D0: 四个 Director (纯骨架，不影响现有行为)
@@ -86,6 +88,8 @@ class GameScene(Scene):
 
         if self._state == "boss_cinematic":
             self._update_boss_cinematic(delta_time)
+        elif self._state == "biome_event":
+            pass  # G6.4: freeze gameplay until choice made
         elif self._state == "playing":
             self._update_playing(delta_time)
 
@@ -112,7 +116,10 @@ class GameScene(Scene):
         if bmsg:
             self.presentation.show_message(bmsg, 2.0)
             # G5.8.2: refresh visual theme on BUILD COMPLETE/CHANGED
-            if self.presentation.update_theme(self.engine.player):
+            # G6.4: compute build in Gameplay layer, pass BuildType to Presentation
+            from src.game.build_score import calculate_build
+            bt = calculate_build(self.engine.player).identify()
+            if self.presentation.update_theme(bt):
                 self.presentation.show_message(
                     f"Theme: {self.presentation.active_theme.vfx_preset}", 1.5)
 
@@ -132,6 +139,10 @@ class GameScene(Scene):
     def render(self):
         if self._state == "boss_intro":
             self._render_boss_intro()
+            return
+        if self._state == "biome_event":
+            self._render_playing()
+            self._render_biome_event_panel()
             return
         self._render_playing()
         if self._state == "boss_cinematic":
@@ -247,6 +258,10 @@ class GameScene(Scene):
             self.presentation.room_msg_timer = 3.0
 
         self.gameplay.on_enter_floor(floor_num)  # D0: 生命周期
+
+        # G6.4: 25% chance biome event on non-boss floors
+        if not fcfg.is_boss and random.random() < 0.25:
+            self._try_trigger_biome_event()
 
     def _place_player_in_room(self, room_centers: list):
         """玩家置于第一个房间中心。"""
@@ -532,6 +547,9 @@ class GameScene(Scene):
         eng = self.engine
         if self._state == "boss_intro":
             self._on_boss_intro_keydown(key)
+            return
+        if self._state == "biome_event":
+            self._on_biome_event_keydown(key)
             return
         if eng.inventory_open:
             self._handle_inventory_key(key)
@@ -1373,6 +1391,114 @@ class GameScene(Scene):
             self._spawn_boss_from_intro()
             eng._boss_cinematic_timer = 1.0
             self._state = "boss_cinematic"
+
+    # ═══════════════════════════════════════════════════════════
+    #  G6.4: Biome Event Panel
+    # ═══════════════════════════════════════════════════════════
+
+    def _try_trigger_biome_event(self):
+        """G6.4: pick a biome event, freeze gameplay for choice."""
+        from src.game.biome import get_biome_for_floor
+        from src.game.biome_event import pick_event_for_biome
+        biome = get_biome_for_floor(self.engine.current_floor)
+        if not biome: return
+        ev = pick_event_for_biome(biome.id)
+        if not ev: return
+        self._pending_event = ev
+        self._state = "biome_event"
+
+    def _on_biome_event_keydown(self, key: int):
+        """G6.4: 1 or 2 to make choice."""
+        ev = self._pending_event
+        if not ev: return
+        if key in (pygame.K_1, pygame.K_2):
+            idx = 0 if key == pygame.K_1 else 1
+            self._resolve_biome_event(idx)
+
+    def _resolve_biome_event(self, choice_idx: int):
+        """G6.4: execute effect + risk for the chosen option."""
+        ev = self._pending_event
+        if not ev or choice_idx >= len(ev.choices): return
+        choice = ev.choices[choice_idx]
+        from src.game.biome_event import execute_effect, execute_risk
+        eng = self.engine
+        eff_msg = execute_effect(choice.effect, eng.player, eng.monsters, eng.game_map)
+        risk_msg = execute_risk(choice.risk, eng.player, eng.monsters, eng.game_map)
+        self._event_result = [
+            choice.message,
+            eff_msg if eff_msg else "",
+            risk_msg if risk_msg else "",
+        ]
+        self.presentation.show_message(choice.message, 2.5)
+        self._state = "playing"
+        self._pending_event = None
+
+    @staticmethod
+    def _desc_effect(effect: str) -> str:
+        """G6.4: human-readable effect label."""
+        m = {"none":"无", "buff":"增益", "relic":"圣物", "equipment":"装备", "skill_level":"技能升级", "heal":"治疗"}
+        parts = effect.split(":") if effect != "none" else ["none"]
+        return m.get(parts[0], parts[0]) + (f" x{parts[2]}" if len(parts) >= 3 else "")
+
+    @staticmethod
+    def _desc_risk(risk: str) -> str:
+        """G6.4: human-readable risk label."""
+        m = {"none":"无", "spawn":"召唤敌人", "hp_loss":"损失生命", "debuff":"负面状态", "confuse":"混乱"}
+        parts = risk.split(":") if risk != "none" else ["none"]
+        val = parts[1] if len(parts) >= 2 else ""
+        return m.get(parts[0], parts[0]) + (f" ({val})" if val else "")
+
+    @staticmethod
+    def _wrap_text(text: str, font, max_width: int) -> list[str]:
+        """Simple word wrap for Chinese text."""
+        lines = []
+        current = ""
+        for ch in text:
+            test = current + ch
+            if font.size(test)[0] > max_width and current:
+                lines.append(current)
+                current = ch
+            else:
+                current = test
+        if current: lines.append(current)
+        return lines if lines else [text]
+
+    def _render_biome_event_panel(self):
+        """G6.4: draw the choice panel overlay."""
+        ev = self._pending_event
+        if not ev: return
+        screen = self.engine.screen
+        sw, sh = screen.get_width(), screen.get_height()
+        # Dark overlay
+        dark = pygame.Surface((sw, sh))
+        dark.set_alpha(170); dark.fill((5, 5, 15))
+        screen.blit(dark, (0, 0))
+        # Panel
+        pw, ph = 500, 300
+        px, py = sw // 2 - pw // 2, sh // 2 - ph // 2
+        draw_panel(screen, px, py, pw, ph)
+        # Narrative
+        font = get_font(18)
+        lines = self._wrap_text(ev.narrative, font, pw - 40)
+        for i, line in enumerate(lines[:3]):
+            t = font.render(line, True, COLOR_WHITE)
+            screen.blit(t, (px + 20, py + 20 + i * 24))
+        # Choices
+        for j, c in enumerate(ev.choices):
+            y = py + 130 + j * 70
+            key_color = GOLD
+            key = get_font(22).render(f"[{j+1}]", True, key_color)
+            screen.blit(key, (px + 20, y))
+            lbl = get_font(18).render(c.text, True, COLOR_WHITE)
+            screen.blit(lbl, (px + 55, y))
+            eff = get_font(14).render(f"效果: {self._desc_effect(c.effect)}", True, COLOR_GREEN)
+            rsk = get_font(14).render(f"风险: {self._desc_risk(c.risk)}", True, COLOR_RED)
+            screen.blit(eff, (px + 55, y + 22))
+            screen.blit(rsk, (px + 55, y + 40))
+        # Hint
+        hint = get_font(14).render("按 1 或 2 选择", True, (140, 140, 160))
+        screen.blit(hint, (sw // 2 - hint.get_width() // 2, py + ph - 28))
+        pygame.display.flip()
 
     def _spawn_boss_from_intro(self):
         """根据当前楼层生成 Boss 实体。"""

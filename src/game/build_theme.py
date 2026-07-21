@@ -158,3 +158,8 @@ def get_active_theme(player) -> BuildTheme:
     from src.game.build_score import calculate_build
     bs = calculate_build(player)
     return BuildTheme.from_build_type(bs.identify())
+
+
+def get_theme_for_build_type(build_type) -> BuildTheme:
+    """G6.4: resolve theme from a BuildType (zero Gameplay dependency)."""
+    return BuildTheme.from_build_type(build_type)
