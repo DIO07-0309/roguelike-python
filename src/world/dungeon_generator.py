@@ -245,6 +245,21 @@ class DungeonGenerator:
             normal_idx += 1
             self._special_rooms.append(sr)
 
+        # G6.6: 30% chance to place a SECRET room (if biome has wall_interact encounters)
+        if biome_id and self._special_rooms:
+            try:
+                from src.game.encounter import pick_encounter_by_trigger
+                if pick_encounter_by_trigger(biome_id, "wall_interact") and self._randint(0, 100) < 30:
+                    # Replace one non-LANDMARK normal room with SECRET
+                    normal_rooms = [i for i, sr in enumerate(self._special_rooms)
+                                    if sr.type != SpecialRoomType.LANDMARK]
+                    if normal_rooms:
+                        idx = self._randint(0, len(normal_rooms) - 1)
+                        sr = self._special_rooms[normal_rooms[idx]]
+                        sr.type = SpecialRoomType.SECRET
+            except Exception:
+                pass
+
     # =========================================================
     #  核心算法
     # =========================================================

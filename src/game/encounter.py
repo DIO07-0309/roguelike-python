@@ -34,10 +34,11 @@ class EncounterDef:
     type: str                  # "event" | "npc" | "trader" | "quest_giver"
     name: str
     biome: str
-    trigger: str               # "floor_enter" | "room_enter" | "talk"
+    trigger: str               # "floor_enter" | "room_enter" | "wall_interact" | "entity_interact" | "boss_dead" | "item_use"
     room: str                  # "" = any room, "broken_cell" = specific
     repeatable: bool
     narrative: str
+    conditions: list = field(default_factory=list)   # G6.7: "flag:X", "floor>=N", "biome:Y"
     dialogue: list[EncounterNode] = field(default_factory=list)
 
 
@@ -82,6 +83,7 @@ def load_encounter_defs(json_path: str = "resources/encounters.json") -> bool:
             room=obj.get("room", ""),
             repeatable=obj.get("repeatable", False),
             narrative=obj.get("narrative", ""),
+            conditions=obj.get("conditions", []),
             dialogue=nodes,
         )
         _encounters.append(enc)
@@ -105,6 +107,13 @@ def pick_encounter_for_biome(biome_id: str) -> EncounterDef | None:
 
 def get_encounters_for_biome(biome_id: str) -> list[EncounterDef]:
     return _by_biome.get(biome_id, [])
+
+
+def pick_encounter_by_trigger(biome_id: str, trigger: str) -> EncounterDef | None:
+    """G6.6: find a (non-repeatable or available) encounter matching trigger type."""
+    pool = [e for e in _by_biome.get(biome_id, []) if e.trigger == trigger]
+    if not pool: return None
+    return random.choice(pool)
 
 
 # ══════════════════════════════════════════════════════════════

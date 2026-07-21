@@ -569,6 +569,8 @@ class GameScene(Scene):
                 room = eng.game_map.get_special_room_at(tx, ty)
                 if room and not room.triggered:
                     self._interact_special()
+                elif self._try_wall_interact():
+                    pass  # G6.6: wall_interact triggered, handled internally
                 else:
                     self._handle_pickup()
             else:
@@ -1401,6 +1403,32 @@ class GameScene(Scene):
     # ═══════════════════════════════════════════════════════════
     #  G6.5: Encounter Framework (unified NPC/event/trade)
     # ═══════════════════════════════════════════════════════════
+
+    def _try_wall_interact(self) -> bool:
+        """G6.6: E-on-wall → trigger wall_interact encounter for current biome."""
+        eng = self.engine
+        if not eng.player or not eng.game_map: return False
+        from src.entities.player import Direction
+        tx = int(eng.player.entity.rect.centerx // 32)
+        ty = int(eng.player.entity.rect.centery // 32)
+        offsets = {Direction.UP: (0, -1), Direction.DOWN: (0, 1),
+                   Direction.LEFT: (-1, 0), Direction.RIGHT: (1, 0)}
+        ox, oy = offsets.get(eng.player.direction, (0, -1))
+        if eng.game_map.is_walkable(tx + ox, ty + oy):
+            return False
+        # Facing a wall — check for secret encounter
+        from src.game.biome import get_biome_for_floor
+        from src.game.encounter import pick_encounter_by_trigger
+        biome = get_biome_for_floor(eng.current_floor)
+        if not biome: return False
+        enc = pick_encounter_by_trigger(biome.id, "wall_interact")
+        if enc:
+            self._encounter_def = enc
+            self._encounter_node = enc.dialogue[0].id if enc.dialogue else "end"
+            self._encounter_result = []
+            self._state = "encounter"
+            return True
+        return False
 
     def _try_trigger_encounter(self):
         """G6.5: pick encounter (prioritizes encounters.json, falls back to biome_events.json)."""
