@@ -71,3 +71,7 @@ def load_skill_defs(json_path: str = "resources/skills.json") -> bool:
 
 def get_skill_def(sid: str) -> SkillDef | None:
     return _g_skill_defs.get(sid)
+
+
+def get_all_skill_defs() -> dict[str, SkillDef]:
+    return _g_skill_defs

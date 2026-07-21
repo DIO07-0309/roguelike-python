@@ -64,3 +64,26 @@ def has_tag(tags: list[BuildTag], tag: BuildTag) -> bool:
 
 def has_any_tag(tags: list[BuildTag], *targets: BuildTag) -> bool:
     return any(t in tags for t in targets)
+
+
+# ── String-to-enum mapping (for JSON tag conversion) ──────
+
+_STRING_TO_TAG: dict[str, BuildTag] = {}
+for _tag in BuildTag:
+    if _tag != BuildTag.NONE:
+        _STRING_TO_TAG[_tag.name.lower()] = _tag
+
+
+def build_tags_from_strings(strings: list[str]) -> list[BuildTag]:
+    """Convert JSON string tags (e.g. [\"melee\",\"fire\"]) to BuildTag list."""
+    result = []
+    for s in strings:
+        tag = _STRING_TO_TAG.get(s.lower())
+        if tag is not None:
+            result.append(tag)
+    return result
+
+
+def build_tag_from_string(name: str) -> BuildTag | None:
+    """Convert a single string tag name to BuildTag, or None if unknown."""
+    return _STRING_TO_TAG.get(name.lower())

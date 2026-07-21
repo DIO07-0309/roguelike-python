@@ -192,10 +192,87 @@ _snd: dict[str, pygame.mixer.Sound] = {}
 # 外部MP3路径
 JOJO_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "jojo_timestop.mp3")
 
+# ── G5.8: new SFX for G5 sync skills ────────────────────
+
+def _compile_ice_crack():
+    """碎冰：高频玻璃质噪声 + 三声脆响泛音。"""
+    dur = 0.28; n = int(SR * dur)
+    rng = random.Random(7)
+    result = array.array('h', [0] * n)
+    for _ in range(40):
+        start = rng.randint(0, n - 1)
+        length = rng.randint(30, 180)
+        for i in range(length):
+            pos = start + i
+            if pos < n:
+                decay = max(0, 1 - i / length) ** 4
+                result[pos] = int(MAX_AMP * 0.7 * decay * (rng.random() * 2 - 1))
+    for j, freq in enumerate([2400, 3000, 3600]):
+        start = int(SR * j * 0.06)
+        chunk = _sine_samples(int(SR * 0.12), freq, _decay(0.35, 0.12))
+        for i, v in enumerate(chunk):
+            if start + i < n:
+                result[start + i] = max(-MAX_AMP, min(MAX_AMP - 1, result[start + i] + v))
+    return pygame.mixer.Sound(buffer=result.tobytes())
+
+def _compile_lightning():
+    """闪电：极短高能量爆裂噪声 + 放电脉冲。"""
+    dur = 0.22; n = int(SR * dur)
+    rng = random.Random(13)
+    result = array.array('h', [0] * n)
+    for _ in range(50):
+        start = rng.randint(0, n - 1)
+        length = rng.randint(20, 120)
+        for i in range(length):
+            pos = start + i
+            if pos < n:
+                d = max(0, 1 - i / length) ** 6
+                result[pos] = int(MAX_AMP * 0.85 * d * (rng.random() * 2 - 1))
+    zap = _square_samples(n, lambda t: 80 + 600 * (1 - t/dur)**3, _spike(0.4, 0.005, dur))
+    return pygame.mixer.Sound(buffer=_mix(result, zap).tobytes())
+
+def _compile_shadow_step():
+    """暗影步：低沉呼哨 — 快速下降正弦扫频 + 软噪声。"""
+    dur = 0.22; n = int(SR * dur)
+    swoosh = _sine_samples(n, lambda t: 500 - 380 * (t/dur)**1.5, _decay(0.5, dur))
+    ns = _noise_samples(n, _spike(0.15, 0.005, dur * 0.5))
+    return pygame.mixer.Sound(buffer=_mix(swoosh, ns).tobytes())
+
+def _compile_blood_frenzy():
+    """血怒：两次低沉心跳脉冲。"""
+    dur = 0.34; n = int(SR * dur)
+    result = array.array('h', [0] * n)
+    for pulse_t, freq in [(0.0, 60), (0.14, 80)]:
+        start = int(SR * pulse_t)
+        chunk = _sine_samples(int(SR * 0.15), freq, _spike(0.55, 0.01, 0.15))
+        for i, v in enumerate(chunk):
+            if start + i < n:
+                result[start + i] = max(-MAX_AMP, min(MAX_AMP - 1, result[start + i] + v))
+    rumble = _noise_samples(n, _decay(0.2, dur))
+    return pygame.mixer.Sound(buffer=_mix(result, rumble).tobytes())
+
+def _compile_summon():
+    """召唤：柔光铃音 — 三和弦渐响上升。"""
+    dur = 0.40; n = int(SR * dur)
+    result = array.array('h', [0] * n)
+    notes = [(0.0, 392), (0.08, 523.25), (0.16, 659.25)]
+    for t_start, freq in notes:
+        start = int(SR * t_start)
+        chunk = _sine_samples(int(SR * 0.2), freq, _decay(0.4, 0.2))
+        for i, v in enumerate(chunk):
+            if start + i < n:
+                result[start + i] = max(-MAX_AMP, min(MAX_AMP - 1, result[start + i] + v))
+    pad = _sine_samples(n, 261.63, _decay(0.12, dur))
+    return pygame.mixer.Sound(buffer=_mix(result, pad).tobytes())
+
 _COMPILERS = {
     "melee": _compile_melee, "hit": _compile_hit, "slash": _compile_slash,
     "bolt": _compile_bolt, "heal": _compile_heal, "pickup": _compile_pickup,
     "levelup": _compile_levelup, "victory": _compile_victory,
+    # G5.8 sync SFX
+    "ice_crack": _compile_ice_crack, "lightning": _compile_lightning,
+    "shadow_step": _compile_shadow_step, "blood_frenzy": _compile_blood_frenzy,
+    "summon": _compile_summon,
 }
 
 def _get_or_load(name: str) -> pygame.mixer.Sound | None:

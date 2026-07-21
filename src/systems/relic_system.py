@@ -26,6 +26,7 @@ class RelicDef:
     param: float = 0.0
     param2: int = 0
     hud_color: tuple = (200, 200, 200)
+    tags: list = field(default_factory=list)  # G5.8 patch: BuildTag values
 
 
 # ---- Config table ----
@@ -62,6 +63,10 @@ def load_relic_defs(path: str = "resources/relics.json") -> bool:
         rid = obj.get("id", "")
         if not rid:
             continue
+        # G5.8: parse string tags → BuildTag enum values
+        from src.game.build_tag import build_tags_from_strings
+        raw_tags = obj.get("tags", [])
+        relic_tags = build_tags_from_strings(raw_tags) if raw_tags else []
         d = RelicDef(
             id=rid,
             name=obj.get("name", rid),
@@ -71,6 +76,7 @@ def load_relic_defs(path: str = "resources/relics.json") -> bool:
             param=obj.get("param", 0.0),
             param2=obj.get("param2", 0),
             hud_color=tuple(obj.get("hud_color", [200, 200, 200])),
+            tags=relic_tags,
         )
         _g_relic[rid] = d
         loaded += 1

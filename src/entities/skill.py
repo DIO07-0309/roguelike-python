@@ -45,6 +45,9 @@ class Skill:
         # 护符修正
         self._charm_cd_bonus = 0.0
         self._charm_power_bonus = 0.0
+        # G5.8: Build tags from data-driven SkillDef
+        self.tags: list = []
+        _attach_skill_tags(self)
 
     # =========================================================
     #  冷却与状态
@@ -124,6 +127,24 @@ class Skill:
         self._charm_cd_bonus = 0.0
         self._charm_power_bonus = 0.0
         self._recalc_cooldown()
+
+
+# ── G5.8: Skill tag resolver ─────────────────────────────
+
+def _attach_skill_tags(skill: "Skill"):
+    """Resolve BuildTag list from SkillDef and attach to skill instance.
+
+    Matches SkillDef by Chinese name; lazy-imports to avoid circular deps.
+    """
+    try:
+        from src.game.skill_defs import get_all_skill_defs
+        from src.game.build_tag import build_tags_from_strings
+    except Exception:
+        return
+    for def_ in get_all_skill_defs().values():
+        if def_.name == skill.name:
+            skill.tags = build_tags_from_strings(def_.tags)
+            return
 
 
 class ActiveSkill(Skill):
@@ -668,7 +689,9 @@ class ShadowStrikeSkill(ActiveSkill):
         if game_map and not game_map.is_rect_walkable(caster.entity.rect):
             caster.entity.position.x, caster.entity.position.y = old_pos
             caster.entity.sync_rect()
-        mult = self._backstab_mult; if self.level >= 2: mult *= 1.5
+        mult = self._backstab_mult
+        if self.level >= 2:
+            mult *= 1.5
         base = caster.combat.get_effective_attack() * 1.8 * self.get_power_multiplier()
         from src.systems.combat_system import calculate_damage
         dmg = calculate_damage(int(base * mult), target.combat.get_effective_defense(AttackType.PHYSICAL))

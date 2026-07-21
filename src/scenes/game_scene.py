@@ -252,14 +252,18 @@ class GameScene(Scene):
             return 0, 0
         p = self.presentation
         sw, sh = eng.screen.get_width(), eng.screen.get_height()
-        cx = eng.player.entity.rect.centerx - sw // 2
-        cy = eng.player.entity.rect.centery - sh // 2
+        # G5.8.3: zoom shrinks effective viewport (logical zoom)
+        zoom = max(0.85, min(1.3, p.zoom_level))
+        sw_eff = int(sw / zoom)
+        sh_eff = int(sh / zoom)
+        cx = eng.player.entity.rect.centerx - sw_eff // 2
+        cy = eng.player.entity.rect.centery - sh_eff // 2
         # G5.8.3: dash offset
         cx -= p.dash_offset_x
         cy -= p.dash_offset_y
         if eng.game_map:
-            cx = max(0, min(cx, eng.game_map.pixel_width - sw))
-            cy = max(0, min(cy, eng.game_map.pixel_height - sh))
+            cx = max(0, min(cx, eng.game_map.pixel_width - sw_eff))
+            cy = max(0, min(cy, eng.game_map.pixel_height - sh_eff))
         # G5.8.3: screen shake
         sx, sy = p.get_camera_shake_offset()
         cx += sx; cy += sy
@@ -563,12 +567,28 @@ class GameScene(Scene):
                         m.combat.is_alive = True
 
     def _use_skill_normal(self, skill, index: int):
-        """正常释放技能 + 死亡处理。"""
+        """正常释放技能 + G5.8 伤害数字/震屏 + 死亡处理。"""
         eng = self.engine
+        # G5.8: track pre-HP for damage floats
+        pre_hp = {id(m): m.combat.current_hp for m in eng.monsters if m.combat.is_alive}
         result = eng.player.skills.use_active(
             index, eng.player, eng.monsters, eng.game_map, eng._game_time)
         if result and "冷却中" not in result:
             self._add_skill_effect(skill)
+            # G5.8: spawn themed damage floats for each damaged target
+            total_dmg = 0
+            from src.entities.components import AttackType
+            is_magic = getattr(skill, 'attack_type', None) == AttackType.MAGICAL
+            for m in eng.monsters:
+                hp_before = pre_hp.get(id(m), 0)
+                dmg_taken = hp_before - m.combat.current_hp
+                if dmg_taken > 0:
+                    total_dmg += dmg_taken
+                    self.presentation.spawn_themed_damage(
+                        m.entity.rect.centerx, m.entity.rect.centery - 8,
+                        dmg_taken, is_magic)
+            if total_dmg >= 20:
+                self.presentation.trigger_shake(max(3, min(10, total_dmg // 5)))
         if result:
             dead = [m for m in eng.monsters if not m.combat.is_alive]
             for m in dead:
@@ -576,13 +596,15 @@ class GameScene(Scene):
                 eng.monsters.remove(m)
 
     def _add_skill_effect(self, skill):
-        """根据技能类型+等级写入视觉特效。"""
+        """根据技能类型+等级写入视觉特效 (G5.8: play_recipe theme-aware)。"""
         eng = self.engine
         if not eng.player:
             return
         cx = eng.player.entity.rect.centerx
         cy = eng.player.entity.rect.centery
         lv, name = skill.level, skill.name
+        # Resolve theme preset from active BuildTheme
+        preset = self.presentation.active_theme.vfx_preset
         if name == "斩击":
             eng._attack_effects += slash_skill_fx(cx, cy, eng.player.direction, lv)
             play_sfx("slash")
@@ -595,6 +617,27 @@ class GameScene(Scene):
         elif name == "自愈":
             eng._attack_effects += heal_fx(cx, cy, lv)
             play_sfx("heal")
+        # ── G5.8: G5 sync skills ──
+        elif name == "冰爆":
+            eng._attack_effects += play_recipe("skill_ice_nova", cx, cy, preset="ice")
+            play_sfx("ice_crack")
+        elif name == "连锁闪电":
+            t = find_attack_target(eng.player.entity.rect, eng.monsters, 8.0)
+            tx = t.entity.rect.centerx if t else cx + 80
+            ty = t.entity.rect.centery if t else cy
+            eng._attack_effects += play_recipe("skill_chain_lightning", cx, cy,
+                                               preset="lightning", target_cx=tx, target_cy=ty)
+            play_sfx("lightning")
+        elif name == "暗影突刺":
+            eng._attack_effects += play_recipe("skill_slash", cx, cy, preset="shadow",
+                                               direction=eng.player.direction)
+            play_sfx("shadow_step")
+        elif name == "血怒":
+            eng._attack_effects += play_recipe("melee_hit", cx, cy, preset="bleed")
+            play_sfx("blood_frenzy")
+        elif name == "召唤英灵":
+            eng._attack_effects += play_recipe("boss_summon", cx, cy, preset="summon")
+            play_sfx("summon")
 
     def _apply_pending_damage(self):
         """时停结束 — 一次性结算所有暂存伤害。"""
