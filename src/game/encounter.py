@@ -98,9 +98,14 @@ def get_encounter(eid: str) -> EncounterDef | None:
     return _by_id.get(eid)
 
 
-def pick_encounter_for_biome(biome_id: str) -> EncounterDef | None:
-    """Weighted random pick (currently uniform)."""
+def pick_encounter_for_biome(biome_id: str, ctx=None) -> EncounterDef | None:
+    """Weighted random pick. ctx=EvalContext for G6.7 conditions filter."""
     pool = _by_biome.get(biome_id, [])
+    if not pool: return None
+    # G6.7: condition filtering
+    if ctx is not None:
+        from src.game.condition_evaluator import evaluate_conditions
+        pool = [e for e in pool if evaluate_conditions(e.conditions, ctx)]
     if not pool: return None
     return random.choice(pool)
 
@@ -117,10 +122,173 @@ def pick_encounter_by_trigger(biome_id: str, trigger: str) -> EncounterDef | Non
 
 
 # ══════════════════════════════════════════════════════════════
-#  Unified Effect / Risk executors (from biome_event.py, expanded)
+#  G6.7: Unified Action Dispatcher (string + dict dual format)
 # ══════════════════════════════════════════════════════════════
 
+def execute_action(action, player, monsters: list, game_map) -> str:
+    """G6.7: Accepts str ('buff:attack_up:2') or dict ({'type':'buff',...})."""
+    if isinstance(action, str):
+        return _dispatch_string(action, player, monsters, game_map)
+    if isinstance(action, dict):
+        return _dispatch_dict(action, player, monsters, game_map)
+    return ""
+
+
+def _dispatch_string(action: str, player, monsters: list, game_map) -> str:
+    """String DSL dispatch — existing format."""
+    if action in ("", "none"): return ""
+    parts = action.split(":") if ":" in action else [action]
+    kind = parts[0]
+    try:
+        if kind == "buff":
+            name, stacks = parts[1], int(parts[2]) if len(parts) > 2 else 1
+            from src.systems.buff_system import apply_buff
+            apply_buff(player, name, stacks)
+            return f"获得了 {stacks} 层 {name}"
+        elif kind == "relic":
+            count = int(parts[1]) if len(parts) > 1 else 1
+            from src.systems.relic_system import try_grant_random_relic
+            msgs = [try_grant_random_relic(player, 1.0) for _ in range(count)]
+            msgs = [m for m in msgs if m]
+            return "获得了圣物" if msgs else ""
+        elif kind == "equipment":
+            rarity_str = parts[1] if len(parts) > 1 else "rare"
+            return _grant_equipment(player, rarity_str)
+        elif kind == "skill_level":
+            levels = int(parts[1]) if len(parts) > 1 else 1
+            return _grant_skill_levels(player, levels)
+        elif kind == "heal":
+            pct = int(parts[1]) if len(parts) > 1 else 30
+            amt = max(1, player.combat.max_hp * pct // 100)
+            player.combat.heal(amt)
+            return f"+{amt}HP"
+        elif kind == "spawn":
+            enemy_id, count = parts[1], int(parts[2]) if len(parts) > 2 else 1
+            return _spawn_enemies(enemy_id, count, player, monsters, game_map)
+        elif kind == "hp_loss":
+            pct = int(parts[1]) if len(parts) > 1 else 10
+            loss = max(1, player.combat.current_hp * pct // 100)
+            player.combat.take_damage(loss)
+            return f"-{loss}HP"
+        elif kind == "debuff":
+            name, stacks = parts[1], int(parts[2]) if len(parts) > 2 else 1
+            from src.systems.buff_system import apply_buff
+            apply_buff(player, name, stacks)
+            return f"受到 {name}"
+        elif kind == "confuse":
+            return "困惑！"
+        elif kind == "relic_from_pool":
+            from src.systems.relic_system import try_grant_random_relic
+            m = try_grant_random_relic(player, 1.0)
+            return m if m else ""
+    except Exception:
+        return ""
+    return ""
+
+
+def _dispatch_dict(action: dict, player, monsters: list, game_map) -> str:
+    """JSON object dispatch — new G6.7 format."""
+    kind = action.get("type", "")
+    try:
+        if kind == "buff":
+            from src.systems.buff_system import apply_buff
+            apply_buff(player, action["name"], action.get("stacks", 1))
+            return f"获得了 {action.get('stacks',1)} 层 {action['name']}"
+        if kind == "relic":
+            from src.systems.relic_system import try_grant_random_relic
+            count = action.get("count", 1)
+            msgs = [try_grant_random_relic(player, 1.0) for _ in range(count)]
+            msgs = [m for m in msgs if m]
+            return "获得了圣物" if msgs else ""
+        if kind == "equipment":
+            return _grant_equipment(player, action.get("rarity", "rare"))
+        if kind == "skill_level":
+            return _grant_skill_levels(player, action.get("levels", 1))
+        if kind == "heal":
+            pct = action.get("pct", 30)
+            amt = max(1, player.combat.max_hp * pct // 100)
+            player.combat.heal(amt)
+            return f"+{amt}HP"
+        if kind == "spawn":
+            return _spawn_enemies(action.get("enemy", "slime"),
+                                  action.get("count", 1),
+                                  player, monsters, game_map)
+        if kind == "hp_loss":
+            pct = action.get("pct", 10)
+            loss = max(1, player.combat.current_hp * pct // 100)
+            player.combat.take_damage(loss)
+            return f"-{loss}HP"
+        if kind == "debuff":
+            from src.systems.buff_system import apply_buff
+            apply_buff(player, action["name"], action.get("stacks", 1))
+            return f"受到 {action['name']}"
+        if kind == "set_flag":
+            from src.game.world_state import WorldState
+            fid = action.get("flag", 0)
+            return ""
+        if kind == "set_meta_flag":
+            from src.game.meta_state import set_meta_flag
+            set_meta_flag(action.get("flag", 0))
+            return ""
+    except Exception:
+        return ""
+    return ""
+
+
+# ── Shared helpers ──────────────────────────────────────────
+
+def _grant_equipment(player, rarity_str: str) -> str:
+    from src.entities.item import generate_random_item, Rarity
+    target_map = {"rare": Rarity.RARE, "epic": Rarity.EPIC, "legendary": Rarity.LEGENDARY}
+    tgt = target_map.get(rarity_str, Rarity.RARE)
+    item = None
+    for _ in range(15):
+        c = generate_random_item()
+        if c and c.rarity.value >= tgt.value:
+            item = c; break
+    if not item: item = generate_random_item()
+    if item and player.inventory.add(item, player):
+        return f"获得了 {item.name}"
+    return "背包已满"
+
+
+def _grant_skill_levels(player, levels: int) -> str:
+    active = player.skills.active_skills
+    if not active: return ""
+    sk = random.choice(active)
+    gained = 0
+    for _ in range(levels):
+        if sk.level < sk.max_level:
+            sk._on_level_up(); sk.level += 1; gained += 1
+    return f"{sk.name} +{gained}级" if gained else ""
+
+
+def _spawn_enemies(enemy_id: str, count: int, player, monsters: list, game_map) -> str:
+    from src.entities.monster import spawn_monster
+    px, py = player.entity.position.x, player.entity.position.y
+    spawned = 0
+    for _ in range(count * 3):
+        if spawned >= count: break
+        off_x, off_y = random.randint(-4, 4), random.randint(-4, 4)
+        tx = int((px + off_x * 32) // 32)
+        ty = int((py + off_y * 32) // 32)
+        if game_map and game_map.is_walkable(tx, ty):
+            sx, sy = game_map.tile_to_pixel(tx, ty)
+            m = spawn_monster(sx, sy, enemy_id)
+            monsters.append(m); spawned += 1
+    return "敌人出现了！" if spawned else ""
+
+
+# ── Backward compat wrappers ────────────────────────────────
+
 def execute_effect(effect: str, player, monsters: list, game_map) -> str:
+    """Delegate to unified execute_action (string format)."""
+    return execute_action(effect, player, monsters, game_map)
+
+
+def execute_risk(risk: str, player, monsters: list, game_map) -> str:
+    """Delegate to unified execute_action (string format)."""
+    return execute_action(risk, player, monsters, game_map)
     """Execute a reward effect. Returns a brief result message."""
     if effect in ("", "none"): return ""
     parts = effect.split(":") if ":" in effect else [effect]

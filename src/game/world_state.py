@@ -1,38 +1,47 @@
 """
-D4: WorldState — 世界状态标志位系统
+D4/G6.7: WorldState — run-layer flag system (RunFlag = per-run state).
 
-持久化二进制状态，驱动 NPC 对话/Boss 行为/结局判定。
-与 C++ world_state.h/.cpp 一致。
+Persistent binary state driving NPC dialogue / boss behavior / ending eval.
+RunFlag replaces the old WorldFlag name; WorldFlag kept as alias.
 """
 
 from collections import defaultdict
 
 
-class WorldFlag:
-    """世界状态标志位枚举。"""
-    # Boss 击杀
+class RunFlag:
+    """G6.7: per-run state flags (was WorldFlag)."""
+    # Boss kills
     Boss1_Defeated = 5
     Boss2_Defeated = 10
     Boss3_Defeated = 15
     All_Boss_Defeated = 100
 
-    # 事件相关
+    # Events
     Accepted_Curse = 200
     Blood_Ritual = 201
     Merchant_Killed = 202
 
-    # NPC 救援
-    Saved_Prisoner = 300    # F2
-    Saved_Priest = 301      # F7
-    Met_Solas = 302          # F9
-    Met_Watcher = 303        # F14
+    # NPC rescues
+    Saved_Prisoner = 300
+    Saved_Priest = 301
+    Met_Solas = 302
+    Met_Watcher = 303
 
-    # 结局
+    # Ending
     True_Ending_Ready = 400
+
+    # G6.6: secret discoveries
+    Vault_Discovered = 500
+    Geode_Collected = 501
+    Void_Memory_Seen = 502
+
+
+# Backward compat alias
+WorldFlag = RunFlag
 
 
 class WorldState:
-    """世界状态管理器。"""
+    """Per-run state manager."""
 
     def __init__(self):
         self._flags: set[int] = set()
@@ -56,3 +65,6 @@ class WorldState:
     def reset(self):
         self._flags.clear()
         self._counters.clear()
+
+    def get_flags(self):
+        return set(self._flags)

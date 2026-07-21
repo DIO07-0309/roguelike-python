@@ -1416,13 +1416,15 @@ class GameScene(Scene):
         ox, oy = offsets.get(eng.player.direction, (0, -1))
         if eng.game_map.is_walkable(tx + ox, ty + oy):
             return False
-        # Facing a wall — check for secret encounter
+        # Facing a wall — check for secret encounter (G6.7: conditions-filtered)
         from src.game.biome import get_biome_for_floor
         from src.game.encounter import pick_encounter_by_trigger
+        from src.game.condition_evaluator import evaluate_conditions
         biome = get_biome_for_floor(eng.current_floor)
         if not biome: return False
+        ctx = self._make_eval_context()
         enc = pick_encounter_by_trigger(biome.id, "wall_interact")
-        if enc:
+        if enc and evaluate_conditions(enc.conditions, ctx):
             self._encounter_def = enc
             self._encounter_node = enc.dialogue[0].id if enc.dialogue else "end"
             self._encounter_result = []
@@ -1430,21 +1432,32 @@ class GameScene(Scene):
             return True
         return False
 
+    def _make_eval_context(self):
+        """G6.7: build EvalContext for condition filtering."""
+        from src.game.condition_evaluator import EvalContext
+        from src.game.biome import get_biome_for_floor
+        from src.game.meta_state import get_meta_flags
+        biome = get_biome_for_floor(self.engine.current_floor)
+        return EvalContext(
+            run_flags=self.gameplay.world_state.get_flags(),
+            meta_flags=get_meta_flags(),
+            floor=self.engine.current_floor,
+            biome_id=biome.id if biome else "",
+        )
+
     def _try_trigger_encounter(self):
-        """G6.5: pick encounter (prioritizes encounters.json, falls back to biome_events.json)."""
+        """G6.5/G6.7: pick encounter (conditions-filtered, falls back to biome_events)."""
         from src.game.biome import get_biome_for_floor
         biome = get_biome_for_floor(self.engine.current_floor)
         if not biome: return
-        # Prioritize new encounter framework
         from src.game.encounter import pick_encounter_for_biome
-        enc = pick_encounter_for_biome(biome.id)
+        enc = pick_encounter_for_biome(biome.id, ctx=self._make_eval_context())
         if enc:
             self._encounter_def = enc
             self._encounter_node = enc.dialogue[0].id if enc.dialogue else "end"
             self._encounter_result = []
             self._state = "encounter"
             return
-        # Fallback to legacy biome_events
         from src.game.biome_event import pick_event_for_biome
         ev = pick_event_for_biome(biome.id)
         if not ev: return

@@ -74,6 +74,8 @@ def main():
     load_biome_event_defs("resources/biome_events.json")
     from src.game.encounter import load_encounter_defs
     load_encounter_defs("resources/encounters.json")
+    from src.game.meta_state import load_meta_state
+    load_meta_state("saves/meta_save.json")
     print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)
