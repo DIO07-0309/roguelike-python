@@ -401,6 +401,12 @@ roguelike/
 | G5.8.7 | Presentation Integration: PresentationEvent + dispatch() unified pipeline | ✅ |
 | G5.8.8 | Timeline Presentation: 12 recipes with staged delays | ✅ |
 | G6.1 | Biome System: 3 biomes (Prison/Volcano/Abyss) + tile_palette/enemy_pool/boss + ambient particles + biome BGM | ✅ |
+| G6.2 | Landmark System: 9 biome landmarks (3 per biome) + environmental storytelling + SECRET room revival + floor_config/narrative → JSON | ✅ |
+| G6.3 | Biome Hazards: 6 environmental hazards on landmark rooms (slow_zone/burn_tick/confuse/deflect) | ✅ |
+| G6.4 | Biome Events: 6 risk/reward events + module boundary cleanup (Presentation no longer depends on BuildScore) | ✅ |
+| G6.5 | Encounter Framework: unified NPC/dialogue/trade/event model + 6 NPC encounters (2 per biome) + multi-round dialogue engine | ✅ |
+| G6.6 | Exploration: secret encounters via wall_interact + SECRET room placement + conditions[] pre-emptive field | ✅ |
+| G6.7 | Meta Progression: 3-layer Flags (RunFlag/MetaFlag/SaveFlag) + ConditionEvaluator DSL + Action dict+string dual format + IF→SHOW→DO pipeline | ✅ |
 
 ---
 
@@ -425,6 +431,91 @@ roguelike/
 
 **数据驱动**：`resources/biomes.json` 定义所有 Biome 参数，`src/game/biome.py` 加载/查询。
 跨 Biome 边界（F5→F6, F10→F11）触发章节过渡演出 + "进入 XXX" 消息条。
+
+### G6.2 Landmark System
+
+每个 Biome 有 3 个地标房间，提供环境叙事（Environmental Storytelling）：
+| Biome | Landmark | 图标 | 叙事 |
+|:---|:---|:---|:---|
+| Prison | broken_cell / torture_chamber / collapsed_tunnel | ⚒ / † / ▼ | 牢房/刑具/落石 |
+| Volcano | lava_rift / forge_ruins / fire_pillar | ≈ / ⚔ / ☀ | 熔岩/锻炉/火柱 |
+| Abyss | floating_altar / void_crack / ancient_gate | ◎ / ◆ / ☗ | 浮坛/虚空裂/石门 |
+
+Landmark = `SpecialRoom(type=LANDMARK, landmark_id="...")` — 复用现有房间系统，无继承。
+`resources/world/` 目录每 Biome 一个 JSON 单文件（prison/volcano/abyss），含完整 biome + landmark + hazard 数据。
+`floor_config.py` 150 行硬编码 → `resources/floor_config.json` + `floor_narrative.json` 懒加载。
+
+### G6.3 Biome Hazards
+
+6 个环境机制挂在 landmark 房间上，每帧 tick：
+| Biome | Landmark | Hazard | 效果 |
+|:---|:---|:---|:---|
+| Prison | broken_cell | swinging_chains | 每 2s 减速 35% |
+| Prison | collapsed_tunnel | rockfall | 每 4s 3 dmg |
+| Volcano | lava_rift | eruption | 每 3s 5 dmg |
+| Volcano | fire_pillar | heat_wave | 每 1.5s 减速 30% |
+| Abyss | void_crack | space_warp | 每 5s 方向反转 |
+| Abyss | floating_altar | gravity_flux | 投射物偏转 |
+
+### G6.4 Biome Events + Module Cleanup
+
+6 个风险/奖励事件（25% 触发率，按 1/2 选择）：
+| Biome | Event | 奖励 | 风险 |
+|:---|:---|:---|:---|
+| Prison | prisoner_rescue | +2 attack_up | 召唤精英兽人 |
+| Prison | execution_ground | +1 relic | +2 curse |
+| Volcano | forge_of_fire | rare 装备 | -15% HP |
+| Abyss | void_whisper | +1 技能等级 | confuse 5s |
+| Abyss | sacrificial_altar | +2 relics | -50% HP |
+
+**模块边界收紧**：`PresentationSystemDirector.update_theme()` 不再调用 `calculate_build()` — 接收 BuildType 由 GameScene 计算传入。Timeline 删除死代码 `__import__`。
+
+### G6.5 Encounter Framework
+
+统一 NPC/事件/交易/对话为 `EncounterDef` 数据模型（2 per biome）：
+| Biome | Encounter | 类型 | 节点 |
+|:---|:---|:---|:---|
+| Prison | prisoner_merchant | npc+trader | greet→shop(HP换装备)→farewell |
+| Prison | old_prisoner | npc | greet→story→advice(+buff) |
+| Volcano | forge_master | npc+trader | greet→forge/story→farewell |
+| Volcano | lost_miner | npc(非重复) | greet→saved→reward |
+| Abyss | watcher | npc | greet→identity/fight→lore→blessing |
+| Abyss | void_trader | npc+trader | greet→trade(HP换圣物+传说) |
+
+多轮对话引擎：`_encounter_state = {def, current_node}` → 每轮渲染 text + choices → next node。
+
+### G6.6 Exploration
+
+3 个秘密 Encounter → `trigger="wall_interact"` (面向墙按 E)：
+| Biome | Secret | 奖励 | 风险 |
+|:---|:---|:---|:---|
+| Prison | hidden_prison_vault | 史诗装备 | 骷髅×2 |
+| Volcano | volcanic_geode | 2 圣物 | -15% HP |
+| Abyss | void_memory | +2 技能等级 | +1 curse |
+
+Secret 不是新类型 — 就是 `EncounterDef(trigger="wall_interact")`。零新文件。
+`SpecialRoomType.SECRET` 复用已有 enum（之前未生成），`DungeonGenerator` 30% 概率放置。
+
+### G6.7 Meta Progression: IF→SHOW→DO
+
+三层 Flag 拆分 + ConditionEvaluator DSL + Action 双格式：
+```
+pick_encounter_for_biome(biome, ctx=EvalContext)
+  │ evaluate_conditions(["flag:500","floor>=3"], ctx)   ← IF
+  ▼
+EncounterDef.dialogue[n]                                 ← SHOW
+  ▼
+execute_action(choice.effect)                           ← DO
+execute_action(choice.risk)
+  │ set_meta_flag(MetaFlag.Necromancer_Unlocked)
+```
+
+| 组件 | 文件 | 说明 |
+|:---|:---|:---|
+| RunFlag | `world_state.py` | 本局 flag（15 个） |
+| MetaFlag | `meta_state.py` + `meta_save.json` | 跨局 flag（5 个） |
+| ConditionEvaluator | `condition_evaluator.py` | `"flag:X"` `"floor>=N"` `"biome:Y"` DSL |
+| execute_action() | `encounter.py` | str + dict 双格式自动检测 |
 
 ---
 
