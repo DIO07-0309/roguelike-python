@@ -1,0 +1,31 @@
+{
+  "_comment": "Biome: Ash Volcano — floors 6-10",
+  "biome": {
+    "id": "ash_volcano",
+    "name": "灰烬火山",
+    "name_en": "Ash Volcano",
+    "floor_range": [6, 10],
+    "tile_palette": {
+      "wall_top": [85,40,25], "wall_face": [50,22,15], "wall_brick": [60,30,20],
+      "wall_moss": [70,45,20], "wall_highlight": [110,60,35],
+      "floor_base": [70,35,20], "floor_joint": [55,25,15], "floor_dirt": [65,30,18],
+      "floor_b": [60,30,18], "floor_c": [75,38,22], "grid_line": [45,22,15]
+    },
+    "enemy_pool": ["fire_imp","elite_orc","orc","charger"],
+    "enemy_weights": [30,25,25,20],
+    "boss_id": "10",
+    "bgm": "volcano",
+    "ambient": {
+      "count": 12, "color": [255,120,30],
+      "size_min": 1.0, "size_max": 3.0,
+      "speed": 20, "rise": true,
+      "life_min": 1.5, "life_max": 4.0
+    }
+  },
+  "landmarks": [
+    {"id":"lava_rift","weight":30,"tile_color":[60,15,5],"icon":"≈","message":"熔岩在裂缝中缓缓流动，空气中弥漫着硫磺的气味。","discovery_msg":"地面裂开了一道灼热的伤口，熔岩的光芒照亮了整个洞窟。"},
+    {"id":"forge_ruins","weight":25,"tile_color":[55,25,10],"icon":"⚔","message":"远古的铁砧已经被熔岩半埋，但炉火仍然未熄。","discovery_msg":"一座废弃的铁匠铺半沉在凝固的岩浆中。"},
+    {"id":"fire_pillar","weight":20,"tile_color":[70,20,5],"icon":"☀","message":"巨大的火柱从地底喷涌而出，将洞顶烧得通红。","discovery_msg":"一根火焰柱拔地而起，热浪让你几乎无法呼吸。"}
+  ],
+  "hazards": []
+}

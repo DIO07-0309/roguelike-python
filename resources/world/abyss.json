@@ -1,0 +1,31 @@
+{
+  "_comment": "Biome: Void Abyss — floors 11-15",
+  "biome": {
+    "id": "void_abyss",
+    "name": "虚空深渊",
+    "name_en": "Void Abyss",
+    "floor_range": [11, 15],
+    "tile_palette": {
+      "wall_top": [55,38,65], "wall_face": [28,18,38], "wall_brick": [38,25,48],
+      "wall_moss": [50,25,55], "wall_highlight": [75,55,85],
+      "floor_base": [45,32,55], "floor_joint": [35,22,45], "floor_dirt": [42,28,50],
+      "floor_b": [38,28,50], "floor_c": [50,35,58], "grid_line": [28,18,38]
+    },
+    "enemy_pool": ["shadow_stalker","dark_mage","shadow_assassin","void_walker"],
+    "enemy_weights": [30,30,25,15],
+    "boss_id": "15",
+    "bgm": "abyss",
+    "ambient": {
+      "count": 10, "color": [100,60,140],
+      "size_min": 1.5, "size_max": 4.0,
+      "speed": 8, "rise": true,
+      "life_min": 3.0, "life_max": 8.0
+    }
+  },
+  "landmarks": [
+    {"id":"floating_altar","weight":30,"tile_color":[30,20,50],"icon":"◎","message":"祭坛悬浮在黑色裂缝之上——什么东西在祭坛上发光。","discovery_msg":"一块古老的石板悬停在虚空中，周围的空间在微微扭曲。"},
+    {"id":"void_crack","weight":25,"tile_color":[20,10,40],"icon":"◆","message":"裂缝中传来不属于这个世界的声音——低语、哭泣、狂笑。","discovery_msg":"空中裂开了一道漆黑的缝隙，紫色的光芒从里面渗出。"},
+    {"id":"ancient_gate","weight":20,"tile_color":[25,15,45],"icon":"☗","message":"石门上的符文在黑暗中微微发光——它们写着什么？","discovery_msg":"一座被遗忘的石门矗立在虚空中，门上刻着无法辨认的文字。"}
+  ],
+  "hazards": []
+}

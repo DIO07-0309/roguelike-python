@@ -1,0 +1,31 @@
+{
+  "_comment": "Biome: Forgotten Prison — floors 1-5",
+  "biome": {
+    "id": "forgotten_prison",
+    "name": "遗忘监牢",
+    "name_en": "Forgotten Prison",
+    "floor_range": [1, 5],
+    "tile_palette": {
+      "wall_top": [72,68,62], "wall_face": [42,38,34], "wall_brick": [50,46,42],
+      "wall_moss": [55,70,40], "wall_highlight": [90,85,78],
+      "floor_base": [115,108,95], "floor_joint": [95,88,75], "floor_dirt": [100,93,80],
+      "floor_b": [105,100,88], "floor_c": [110,102,92], "grid_line": [50,45,38]
+    },
+    "enemy_pool": ["skeleton_archer","bone_soldier","slime","shadow_stalker"],
+    "enemy_weights": [35,30,20,15],
+    "boss_id": "5",
+    "bgm": "prison",
+    "ambient": {
+      "count": 6, "color": [140,135,150],
+      "size_min": 1.0, "size_max": 2.5,
+      "speed": 12, "rise": true,
+      "life_min": 2.5, "life_max": 6.0
+    }
+  },
+  "landmarks": [
+    {"id":"broken_cell","weight":30,"tile_color":[40,25,20],"icon":"⚒","message":"墙上的抓痕仍然清晰可见……这里似乎发生过暴乱。","discovery_msg":"你推开一间被遗忘的牢房，空气中弥漫着铁锈味。"},
+    {"id":"torture_chamber","weight":25,"tile_color":[35,20,25],"icon":"†","message":"生锈的刑具上还残留着暗红色的印记。","discovery_msg":"低矮的铁门后是一间审讯室，锁链从天花板上垂下来。"},
+    {"id":"collapsed_tunnel","weight":20,"tile_color":[50,40,35],"icon":"▼","message":"隧道被巨大的落石堵死了——也许这曾是唯一的出路。","discovery_msg":"走廊在这里突然中断，碎石堆成了一座小山。"}
+  ],
+  "hazards": []
+}
