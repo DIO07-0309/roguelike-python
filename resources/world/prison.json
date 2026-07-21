@@ -27,5 +27,8 @@
     {"id":"torture_chamber","weight":25,"tile_color":[35,20,25],"icon":"†","message":"生锈的刑具上还残留着暗红色的印记。","discovery_msg":"低矮的铁门后是一间审讯室，锁链从天花板上垂下来。"},
     {"id":"collapsed_tunnel","weight":20,"tile_color":[50,40,35],"icon":"▼","message":"隧道被巨大的落石堵死了——也许这曾是唯一的出路。","discovery_msg":"走廊在这里突然中断，碎石堆成了一座小山。"}
   ],
-  "hazards": []
+  "hazards": [
+    {"id":"swinging_chains","landmark":"broken_cell","effect":"slow_zone","interval":2.0,"slow_factor":0.65,"message":"悬挂的铁链让每一步都变得沉重。"},
+    {"id":"rockfall","landmark":"collapsed_tunnel","effect":"burn_tick","interval":4.0,"damage":3,"message":"头顶的碎石偶尔会松动坠落。"}
+  ]
 }

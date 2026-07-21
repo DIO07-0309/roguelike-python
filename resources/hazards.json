@@ -1,0 +1,8 @@
+[
+  {"id":"swinging_chains","biome":"forgotten_prison","landmark_id":"broken_cell","effect":"slow_zone","interval":2.0,"slow_factor":0.65,"message":"悬挂的铁链让每一步都变得沉重。"},
+  {"id":"rockfall","biome":"forgotten_prison","landmark_id":"collapsed_tunnel","effect":"burn_tick","interval":4.0,"damage":3,"message":"头顶的碎石偶尔会松动坠落。"},
+  {"id":"eruption","biome":"ash_volcano","landmark_id":"lava_rift","effect":"burn_tick","interval":3.0,"damage":5,"message":"熔岩裂缝突然喷涌——灼热的气浪灼伤了你。"},
+  {"id":"heat_wave","biome":"ash_volcano","landmark_id":"fire_pillar","effect":"slow_zone","interval":1.5,"slow_factor":0.70,"message":"热浪扭曲了空气，你的动作变得迟缓。"},
+  {"id":"space_warp","biome":"void_abyss","landmark_id":"void_crack","effect":"confuse","interval":5.0,"param":0.35,"message":"空间在你周围扭曲——你分不清方向了。"},
+  {"id":"gravity_flux","biome":"void_abyss","landmark_id":"floating_altar","effect":"deflect","interval":2.0,"param":0.40,"message":"引力场在祭坛周围波动——你的攻击轨迹被扭曲了。"}
+]

@@ -27,5 +27,8 @@
     {"id":"void_crack","weight":25,"tile_color":[20,10,40],"icon":"◆","message":"裂缝中传来不属于这个世界的声音——低语、哭泣、狂笑。","discovery_msg":"空中裂开了一道漆黑的缝隙，紫色的光芒从里面渗出。"},
     {"id":"ancient_gate","weight":20,"tile_color":[25,15,45],"icon":"☗","message":"石门上的符文在黑暗中微微发光——它们写着什么？","discovery_msg":"一座被遗忘的石门矗立在虚空中，门上刻着无法辨认的文字。"}
   ],
-  "hazards": []
+  "hazards": [
+    {"id":"space_warp","landmark":"void_crack","effect":"confuse","interval":5.0,"param":0.35,"message":"空间在你周围扭曲——你分不清方向了。"},
+    {"id":"gravity_flux","landmark":"floating_altar","effect":"deflect","interval":2.0,"param":0.40,"message":"引力场在祭坛周围波动——你的攻击轨迹被扭曲了。"}
+  ]
 }

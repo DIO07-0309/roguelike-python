@@ -56,6 +56,8 @@ class GameScene(Scene):
         super().__init__(engine)
         self._state = "playing"   # playing | boss_intro | boss_cinematic
         self._last_biome_id = ""               # G6.1: biome boundary detection
+        self._hazard_timers: dict = {}         # G6.3: hazard cooldowns per landmark
+        self._hazard_confused: float = 0.0     # G6.3: confuse timer
         self._show_relic_panel = False         # B12: R 面板开关
         self._shown_relic_hint = False         # B12.5: 首次 relic 提示
         # D0: 四个 Director (纯骨架，不影响现有行为)
@@ -330,15 +332,20 @@ class GameScene(Scene):
         eng.player.update(delta_time)
         self._tick_skill_regen(delta_time)
         self._tick_buff_system(delta_time)
+        self._tick_hazards(delta_time)          # G6.3: biome environmental hazards
         # B10: 消息计时器由 PresentationDirector 管理
         if not eng.stairs_active and self._all_monsters_dead():
             self._activate_stairs()
 
     def _apply_movement(self, move_x: float, move_y: float,
                         speed: float, dt: float):
-        """分轴移动 + 地图碰撞检测。"""
+        """分轴移动 + 地图碰撞检测 + G6.3 confuse reversal。"""
         eng = self.engine
         entity = eng.player.entity
+        # G6.3: confuse reverses input direction
+        if self._hazard_confused > 0:
+            move_x = -move_x
+            move_y = -move_y
         entity.position.x += move_x * speed * dt
         entity.sync_rect()
         if not eng.game_map.is_rect_walkable(entity.rect):
@@ -369,6 +376,57 @@ class GameScene(Scene):
         for m in dead:
             self._on_monster_killed(m)
         eng.monsters = [m for m in eng.monsters if m.combat.is_alive]
+
+    def _tick_hazards(self, dt: float):
+        """G6.3: tick biome hazards for the landmark room the player is in."""
+        eng = self.engine
+        if not eng.player or not eng.game_map:
+            return
+        # Decay confuse timer
+        if self._hazard_confused > 0:
+            self._hazard_confused -= dt
+        # Get player's current special room
+        tx, ty = eng.game_map.pixel_to_tile(
+            eng.player.entity.rect.centerx, eng.player.entity.rect.centery)
+        room = eng.game_map.get_special_room_at(tx, ty)
+        if not room or not room.landmark_id:
+            return
+        lid = room.landmark_id
+        from src.game.hazard import get_hazards_for_landmark
+        hazards = get_hazards_for_landmark(lid)
+        if not hazards:
+            return
+        gt = eng._game_time
+        for hz in hazards:
+            timer_key = f"{lid}:{hz.id}"
+            next_tick = self._hazard_timers.get(timer_key, 0.0)
+            if gt < next_tick:
+                continue
+            self._hazard_timers[timer_key] = gt + hz.interval
+            self._apply_hazard(hz, room)
+
+    def _apply_hazard(self, hz, room):
+        """G6.3: execute a single hazard effect on the player."""
+        player = self.engine.player
+        if hz.effect == "burn_tick" and hz.damage > 0:
+            player.combat.take_damage(hz.damage)
+            self.presentation.spawn_themed_damage(
+                player.entity.rect.centerx, player.entity.rect.centery - 8,
+                hz.damage, is_magic=True)
+            if hz.message:
+                self.presentation.show_message(hz.message, 1.8)
+        elif hz.effect == "slow_zone":
+            from src.systems.buff_system import apply_buff
+            apply_buff(player, "slow", 1)
+            if hz.message:
+                self.presentation.show_message(hz.message, 1.8)
+        elif hz.effect == "confuse":
+            self._hazard_confused = 2.0
+            if hz.message:
+                self.presentation.show_message(hz.message, 1.8)
+        elif hz.effect == "deflect":
+            if hz.message:
+                self.presentation.show_message(hz.message, 1.8)
 
     def _on_player_death(self):
         """玩家死亡 → 切到死亡场景。"""

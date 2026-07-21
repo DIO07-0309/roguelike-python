@@ -27,5 +27,8 @@
     {"id":"forge_ruins","weight":25,"tile_color":[55,25,10],"icon":"⚔","message":"远古的铁砧已经被熔岩半埋，但炉火仍然未熄。","discovery_msg":"一座废弃的铁匠铺半沉在凝固的岩浆中。"},
     {"id":"fire_pillar","weight":20,"tile_color":[70,20,5],"icon":"☀","message":"巨大的火柱从地底喷涌而出，将洞顶烧得通红。","discovery_msg":"一根火焰柱拔地而起，热浪让你几乎无法呼吸。"}
   ],
-  "hazards": []
+  "hazards": [
+    {"id":"eruption","landmark":"lava_rift","effect":"burn_tick","interval":3.0,"damage":5,"message":"熔岩裂缝突然喷涌——灼热的气浪灼伤了你。"},
+    {"id":"heat_wave","landmark":"fire_pillar","effect":"slow_zone","interval":1.5,"slow_factor":0.70,"message":"热浪扭曲了空气，你的动作变得迟缓。"}
+  ]
 }
