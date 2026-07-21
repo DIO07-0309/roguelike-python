@@ -64,6 +64,8 @@ def main():
         from src.game.skill_defs import load_skill_defs
         load_skill_defs("resources/skills.json")
     except: pass
+    from src.game.biome import load_biome_defs
+    load_biome_defs("resources/biomes.json")
     print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)

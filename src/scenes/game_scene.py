@@ -55,6 +55,7 @@ class GameScene(Scene):
     def __init__(self, engine):
         super().__init__(engine)
         self._state = "playing"   # playing | boss_intro | boss_cinematic
+        self._last_biome_id = ""               # G6.1: biome boundary detection
         self._show_relic_panel = False         # B12: R 面板开关
         self._shown_relic_hint = False         # B12.5: 首次 relic 提示
         # D0: 四个 Director (纯骨架，不影响现有行为)
@@ -176,8 +177,29 @@ class GameScene(Scene):
             eng.monsters = []
         else:
             other = room_centers[1:] if len(room_centers) > 1 else []
+            # G6.1: enemy pool from Biome
+            from src.game.biome import get_biome_for_floor
+            biome = get_biome_for_floor(floor_num)
+            pool = biome.enemy_pool if biome else None
+            wts = biome.enemy_weights if biome else None
             eng.monsters = self._spawn_monsters_scaled(
-                other, fcfg.monster_count, fcfg.hp_mult, fcfg.atk_mult)
+                other, fcfg.monster_count, fcfg.hp_mult, fcfg.atk_mult,
+                enemy_pool=pool, enemy_weights=wts)
+
+        # G6.1: inject biome tile palette + boundary detection
+        from src.game.biome import get_biome_for_floor as _bio
+        _b = _bio(floor_num) or get_biome_for_floor(floor_num)  # reuse if already imported
+        if _b:
+            from src.world.tile_renderer import set_tile_palette
+            set_tile_palette(_b.tile_palette)
+            # G6.1: biome boundary → chapter-style intro
+            if _b.id != self._last_biome_id and self._last_biome_id:
+                self.presentation.chapter_intro_active = True
+                self.presentation.chapter_intro_timer = 3.0
+                self.presentation.chapter_intro_ch = _b.id
+                self.presentation.floor_intro_active = False
+                self.presentation.show_message(f"进入 {_b.name}", 2.5)
+            self._last_biome_id = _b.id
 
         eng.stairs_pos = (room_centers[-1] if room_centers
                            else (MAP_WIDTH // 2, MAP_HEIGHT // 2))
@@ -224,11 +246,17 @@ class GameScene(Scene):
         eng.player.entity.sync_rect()
 
     def _spawn_monsters_scaled(self, room_centers: list,
-                                 count: int, hp_mult: float, atk_mult: float) -> list:
-        """按楼层难度缩放生成怪物 (D1: 参数来自 FloorConfig)。"""
+                                 count: int, hp_mult: float, atk_mult: float,
+                                 enemy_pool: list = None,
+                                 enemy_weights: list = None) -> list:
+        """按楼层难度缩放生成怪物 (D1: 参数来自 FloorConfig, G6.1: pool from Biome)。"""
         eng = self.engine
         if not room_centers:
             return []
+        if enemy_pool is None:
+            enemy_pool = ["slime", "slime", "orc"]
+        if enemy_weights is None:
+            enemy_weights = [2, 2, 1]
         spawned = []
         room_index = 0
         while len(spawned) < count and room_index < 500:
@@ -237,7 +265,7 @@ class GameScene(Scene):
             stx, sty = tx + off_x, ty + off_y
             if eng.game_map.is_walkable(stx, sty):
                 px, py = eng.game_map.tile_to_pixel(stx, sty)
-                m = spawn_monster(px, py, random.choice(["slime", "slime", "orc"]))
+                m = spawn_monster(px, py, random.choices(enemy_pool, weights=enemy_weights)[0])
                 m.combat.max_hp = int(m.combat.max_hp * hp_mult)
                 m.combat.current_hp = m.combat.max_hp
                 m.combat.attack = int(m.combat.attack * atk_mult)
@@ -1266,7 +1294,10 @@ class GameScene(Scene):
         eng = self.engine
         room_tx = eng.stairs_pos[0] if eng.stairs_pos else MAP_WIDTH // 2
         room_ty = eng.stairs_pos[1] if eng.stairs_pos else MAP_HEIGHT // 2
-        boss = spawn_boss(room_tx, room_ty, eng.current_floor)
+        from src.game.biome import get_biome_for_floor
+        biome = get_biome_for_floor(eng.current_floor)
+        boss_id = biome.boss_id if biome else None
+        boss = spawn_boss(room_tx, room_ty, eng.current_floor, boss_id=boss_id)
         eng.monsters.append(boss)
         self.boss_sys.init_on_spawn(boss, eng.current_floor)
         # G5.8.7: boss landing dispatch
