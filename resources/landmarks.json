@@ -1,0 +1,83 @@
+[
+  {
+    "id": "broken_cell",
+    "biome": "forgotten_prison",
+    "weight": 30,
+    "tile_color": [40, 25, 20],
+    "icon": "⚒",
+    "message": "墙上的抓痕仍然清晰可见……这里似乎发生过暴乱。",
+    "discovery_msg": "你推开一间被遗忘的牢房，空气中弥漫着铁锈味。"
+  },
+  {
+    "id": "torture_chamber",
+    "biome": "forgotten_prison",
+    "weight": 25,
+    "tile_color": [35, 20, 25],
+    "icon": "†",
+    "message": "生锈的刑具上还残留着暗红色的印记。",
+    "discovery_msg": "低矮的铁门后是一间审讯室，锁链从天花板上垂下来。"
+  },
+  {
+    "id": "collapsed_tunnel",
+    "biome": "forgotten_prison",
+    "weight": 20,
+    "tile_color": [50, 40, 35],
+    "icon": "▼",
+    "message": "隧道被巨大的落石堵死了——也许这曾是唯一的出路。",
+    "discovery_msg": "走廊在这里突然中断，碎石堆成了一座小山。"
+  },
+  {
+    "id": "lava_rift",
+    "biome": "ash_volcano",
+    "weight": 30,
+    "tile_color": [60, 15, 5],
+    "icon": "≈",
+    "message": "熔岩在裂缝中缓缓流动，空气中弥漫着硫磺的气味。",
+    "discovery_msg": "地面裂开了一道灼热的伤口，熔岩的光芒照亮了整个洞窟。"
+  },
+  {
+    "id": "forge_ruins",
+    "biome": "ash_volcano",
+    "weight": 25,
+    "tile_color": [55, 25, 10],
+    "icon": "⚔",
+    "message": "远古的铁砧已经被熔岩半埋，但炉火仍然未熄。",
+    "discovery_msg": "一座废弃的铁匠铺半沉在凝固的岩浆中。"
+  },
+  {
+    "id": "fire_pillar",
+    "biome": "ash_volcano",
+    "weight": 20,
+    "tile_color": [70, 20, 5],
+    "icon": "☀",
+    "message": "巨大的火柱从地底喷涌而出，将洞顶烧得通红。",
+    "discovery_msg": "一根火焰柱拔地而起，热浪让你几乎无法呼吸。"
+  },
+  {
+    "id": "floating_altar",
+    "biome": "void_abyss",
+    "weight": 30,
+    "tile_color": [30, 20, 50],
+    "icon": "◎",
+    "message": "祭坛悬浮在黑色裂缝之上——什么东西在祭坛上发光。",
+    "discovery_msg": "一块古老的石板悬停在虚空中，周围的空间在微微扭曲。"
+  },
+  {
+    "id": "void_crack",
+    "biome": "void_abyss",
+    "weight": 25,
+    "tile_color": [20, 10, 40],
+    "icon": "◆",
+    "message": "裂缝中传来不属于这个世界的声音——低语、哭泣、狂笑。",
+    "discovery_msg": "空中裂开了一道漆黑的缝隙，紫色的光芒从里面渗出。"
+  },
+  {
+    "id": "ancient_gate",
+    "biome": "void_abyss",
+    "weight": 20,
+    "tile_color": [25, 15, 45],
+    "icon": "☗",
+    "message": "石门上的符文在黑暗中微微发光——它们写着什么？",
+    "discovery_msg": "一座被遗忘的石门矗立在虚空中，门上刻着无法辨认的文字。"
+  }
+]

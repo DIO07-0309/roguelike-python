@@ -24,6 +24,7 @@ class SpecialRoomType(Enum):
     GAMBLER = auto()
     SHRINE = auto()
     SECRET = auto()
+    LANDMARK = auto()          # G6.2: biome landmark (narrative + visual only)
 
 
 class SpecialRoom:
@@ -36,19 +37,20 @@ class SpecialRoom:
         triggered: 是否已按 E 领取过奖励。
         discovered: 是否已走进过该房间（B10）。
     """
-    __slots__ = ('cx', 'cy', 'rx', 'ry', 'rw', 'rh', 'type', 'triggered', 'discovered')
+    __slots__ = ('cx', 'cy', 'rx', 'ry', 'rw', 'rh', 'type',
+                 'triggered', 'discovered',
+                 'landmark_id', 'biome_id')
 
     def __init__(self, cx: int, cy: int, rx: int, ry: int,
-                 rw: int, rh: int, room_type: SpecialRoomType):
-        self.cx = cx
-        self.cy = cy
-        self.rx = rx
-        self.ry = ry
-        self.rw = rw
-        self.rh = rh
+                 rw: int, rh: int, room_type: SpecialRoomType,
+                 landmark_id: str = "", biome_id: str = ""):
+        self.cx = cx; self.cy = cy
+        self.rx = rx; self.ry = ry; self.rw = rw; self.rh = rh
         self.type = room_type
         self.triggered = False
         self.discovered = False
+        self.landmark_id = landmark_id
+        self.biome_id = biome_id
 
 
 def special_room_from_index(idx: int) -> SpecialRoomType:
@@ -264,6 +266,7 @@ _EXECUTORS = {
     SpecialRoomType.GAMBLER: _exec_gambler,
     SpecialRoomType.SHRINE: _exec_shrine,
     SpecialRoomType.SECRET: _exec_secret,
+    SpecialRoomType.LANDMARK: lambda p: "",   # G6.2: landmarks are passive narrative
 }
 
 
@@ -295,6 +298,7 @@ _DISCOVERY_MESSAGES = {
     SpecialRoomType.GAMBLER: "你发现了一个赌徒的房间。",
     SpecialRoomType.SHRINE: "你发现了一座神圣的神殿。",
     SpecialRoomType.SECRET: "你发现了一间隐藏密室！",
+    SpecialRoomType.LANDMARK: "",   # G6.2: landmark uses custom discovery_msg from landmark def
 }
 
 

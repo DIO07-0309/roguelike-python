@@ -110,11 +110,12 @@ class DungeonGenerator:
     #  公共接口
     # =========================================================
 
-    def generate(self, seed: int = 0) -> GameMap:
+    def generate(self, seed: int = 0, biome_id: str = "") -> GameMap:
         """执行完整生成流程 → 返回可用的 GameMap。
 
         seed=0: 使用全局 random（随机体验）。
         seed!=0: 使用本地 Random(seed)，同 seed 同地图（B8）。
+        biome_id: G6.2 — 用于为该 Biome 注入地标房间。
 
         返回：
             生成好的 GameMap 实例（墙壁 + 地板 + L形走廊）。
@@ -138,8 +139,8 @@ class DungeonGenerator:
         game_map = GameMap(self.width, self.height, self.tile_size)
         template = self._build_template()
         game_map.load_from_template(template)
-        # 5. B8: 分配特殊房间
-        self._assign_special_rooms()
+        # 5. B8: 分配特殊房间 (G6.2: biome landmarks mixed in)
+        self._assign_special_rooms(biome_id)
         game_map.special_rooms = self._special_rooms
         return game_map
 
@@ -188,27 +189,60 @@ class DungeonGenerator:
     #  特殊房间分配 (B8)
     # =========================================================
 
-    def _assign_special_rooms(self):
-        """从 _rooms 中挑选 2~3 个作为特殊房间，排除玩家房和楼梯房。"""
+    def _assign_special_rooms(self, biome_id: str = ""):
+        """从 _rooms 中挑选 2~3 个为特殊房间，排除玩家房和楼梯房。
+
+        G6.2: ~50% chance per slot → biome landmark, else normal special room.
+        """
+        from src.world.special_room import SpecialRoomType
         if len(self._rooms) < 4:
             return
 
-        # 排除 rooms[0] (玩家) 和 rooms[-1] (楼梯)
+        # Load landmarks for this biome (lazy import)
+        landmarks = []
+        if biome_id:
+            try:
+                from src.game.landmark import get_landmarks_for_biome
+                landmarks = get_landmarks_for_biome(biome_id)
+            except Exception:
+                pass
+
+        # Exclude rooms[0] (player) and rooms[-1] (stairs)
         candidates = list(range(1, len(self._rooms) - 1))
         # Fisher-Yates shuffle
         for i in range(len(candidates) - 1, 0, -1):
             j = self._randint(0, i)
             candidates[i], candidates[j] = candidates[j], candidates[i]
 
+        normal_idx = 0
+        placed_landmarks: set[str] = set()
         count = min(3, len(candidates))
         for i in range(count):
             rx, ry, rw, rh = self._rooms[candidates[i]]
+            # G6.2: ~50% biome landmark (if available)
+            if landmarks and self._randint(0, 1) == 0:
+                # Weighted pick, excluding already-placed landmarks
+                avail = [lm for lm in landmarks if lm.id not in placed_landmarks]
+                if avail:
+                    weights = [lm.weight for lm in avail]
+                    pick = random.choices(avail, weights=weights)[0]
+                    placed_landmarks.add(pick.id)
+                    sr = SpecialRoom(
+                        cx=rx + rw // 2, cy=ry + rh // 2,
+                        rx=rx, ry=ry, rw=rw, rh=rh,
+                        room_type=SpecialRoomType.LANDMARK,
+                        landmark_id=pick.id, biome_id=biome_id,
+                    )
+                    self._special_rooms.append(sr)
+                    continue
+            # Fallback: normal special room (round-robin)
             sr = SpecialRoom(
                 cx=rx + rw // 2,
                 cy=ry + rh // 2,
                 rx=rx, ry=ry, rw=rw, rh=rh,
-                room_type=special_room_from_index(i),
+                room_type=special_room_from_index(normal_idx),
             )
+            normal_idx += 1
             self._special_rooms.append(sr)
 
     # =========================================================

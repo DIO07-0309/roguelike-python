@@ -169,7 +169,10 @@ class GameScene(Scene):
             eng._dungeon_seed = random.randint(0, 2**32 - 1)
 
         generator = DungeonGenerator(MAP_WIDTH, MAP_HEIGHT, TILE_SIZE)
-        eng.game_map = generator.generate(eng._dungeon_seed)
+        # G6.2: query biome for landmark injection
+        from src.game.biome import get_biome_for_floor as _biome_for_gen
+        _bio_gen = _biome_for_gen(floor_num)
+        eng.game_map = generator.generate(eng._dungeon_seed, biome_id=_bio_gen.id if _bio_gen else "")
         room_centers = generator.get_room_centers()
         self._place_player_in_room(room_centers)
 
@@ -868,6 +871,14 @@ class GameScene(Scene):
         room = eng.game_map.get_special_room_at(tx, ty)
         if not room or room.triggered:
             return
+        # G6.2: landmarks are passive narrative, not loot rooms
+        if room.landmark_id:
+            from src.game.landmark import get_landmark_by_id
+            lm = get_landmark_by_id(room.landmark_id)
+            if lm and lm.message:
+                self._show_room_message(lm.message)
+            room.triggered = True
+            return
         msg = execute_special_room(room.type, eng.player)
         room.triggered = True
         self._show_room_message(msg)
@@ -889,7 +900,16 @@ class GameScene(Scene):
         if not room or room.discovered:
             return
         room.discovered = True
-        self._show_room_message(get_discovery_message(room.type))
+        # G6.2: landmarks have custom discovery messages
+        if room.landmark_id:
+            from src.game.landmark import get_landmark_by_id
+            lm = get_landmark_by_id(room.landmark_id)
+            msg = lm.discovery_msg if lm else f"你发现了一处特殊的地点——{room.landmark_id}。"
+            self._show_room_message(msg)
+            if lm and lm.message:
+                self._show_room_message(lm.message)  # narrative follow-up
+        else:
+            self._show_room_message(get_discovery_message(room.type))
 
     def _show_room_message(self, msg: str):
         """显示临时消息 (2.5秒后自动消失)。"""

@@ -268,28 +268,25 @@ def draw_tile(screen: pygame.Surface, tile: Tile,
         sr = game_map.get_special_room_at(col, row)
         if sr:
             from src.world.special_room import SpecialRoomType
-            if sr.type == SpecialRoomType.ALTAR:
-                base = (50, 35, 15)
+            # G6.2: biome landmarks — custom tile_color + icon from landmark def
+            if sr.type == SpecialRoomType.LANDMARK and sr.landmark_id:
+                clr, icon = _resolve_landmark_visual(sr.landmark_id)
+                base = clr
+            elif sr.type == SpecialRoomType.ALTAR:
+                base = (50, 35, 15); icon = "+"
             elif sr.type == SpecialRoomType.TREASURE:
-                base = (25, 35, 60)
+                base = (25, 35, 60); icon = "$"
             else:  # FOUNTAIN
-                base = (20, 45, 25)
-            if sr.triggered:
+                base = (20, 45, 25); icon = "~"
+            # G6.2: landmarks don't dim — they're scenery, not consumables
+            if sr.triggered and sr.type != SpecialRoomType.LANDMARK:
                 base = tuple(int(c * 0.55) for c in base)
             rect = pygame.Rect(x, y, TS, TS)
             pygame.draw.rect(screen, base, rect)
             pygame.draw.rect(screen, (35, 35, 45), rect, 1)
             # 房间中心绘制图标
             if col == sr.cx and row == sr.cy:
-                from src.world.special_room import SpecialRoomType
-                if sr.type == SpecialRoomType.ALTAR:
-                    icon = "+"
-                elif sr.type == SpecialRoomType.TREASURE:
-                    icon = "$"
-                else:
-                    icon = "~"
-                ic = (100, 100, 100) if sr.triggered else (255, 255, 200)
-                # 使用简单字体绘制图标
+                ic = (100, 100, 100) if (sr.triggered and sr.type != SpecialRoomType.LANDMARK) else (255, 255, 200)
                 font = _get_icon_font()
                 if font:
                     text = font.render(icon, True, ic)
@@ -304,6 +301,20 @@ def draw_tile(screen: pygame.Surface, tile: Tile,
 
 
 _icon_font = None
+
+
+def _resolve_landmark_visual(landmark_id: str) -> tuple:
+    """G6.2: resolve tile_color + icon from landmarks.json."""
+    default_clr = (60, 40, 40)
+    default_icon = "?"
+    try:
+        from src.game.landmark import get_landmark_by_id
+        lm = get_landmark_by_id(landmark_id)
+        if lm:
+            return lm.tile_color, lm.icon
+    except Exception:
+        pass
+    return default_clr, default_icon
 
 
 def _get_icon_font():

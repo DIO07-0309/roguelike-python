@@ -66,6 +66,8 @@ def main():
     except: pass
     from src.game.biome import load_biome_defs
     load_biome_defs("resources/biomes.json")
+    from src.game.landmark import load_landmark_defs
+    load_landmark_defs("resources/landmarks.json")
     print("[Init] Data loaded.")
 
     engine = GameEngine(screen, clock)
