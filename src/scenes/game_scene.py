@@ -41,7 +41,7 @@ from src.systems.buff_system import (get_effective_attack, get_effective_speed,
 from src.fx_engine import (player_attack_fx, slash_skill_fx, fireball_fx,
                             heal_fx, monsters_attack_fx, boss_cone_fx,
                             boss_circle_fx, boss_summon_fx, time_stop_fx,
-                            hit_flash_fx, draw_fx_on_screen)
+                            hit_flash_fx, draw_fx_on_screen, play_recipe)
 from src.sfx_engine import play_sfx
 from src.bgm_engine import (play_dungeon_bgm, play_boss_bgm, stop_bgm,
                              init_bgm)
@@ -65,10 +65,12 @@ class GameScene(Scene):
         from src.directors.gameplay_system_director import GameplaySystemDirector
         from src.directors.presentation_system_director import PresentationSystemDirector
         from src.directors.game_flow_director import GameFlowDirector
+        from src.directors.audio_director import AudioDirector
         self.boss_sys = BossSystemDirector()
         self.gameplay = GameplaySystemDirector()
         self.presentation = PresentationSystemDirector()
         self.flow = GameFlowDirector()
+        self.audio = AudioDirector()
         self.flow.bind(self)
 
     # ═══════════════════════════════════════════════════════════
@@ -90,6 +92,8 @@ class GameScene(Scene):
         self.presentation.tick(delta_time)
         self.gameplay.tick(delta_time)
         self.boss_sys.tick(delta_time)
+        self.audio.tick(delta_time)                          # G5.8.4: crossfade
+        self._check_boss_phase2()                            # G5.8.4: boss enrage audio
 
         # D1: 随机旁白 (非Boss层, 非事件, 非背包, playing状态)
         fcfg = get_floor_config(self.engine.current_floor)
@@ -104,6 +108,10 @@ class GameScene(Scene):
         bmsg = self.gameplay.check_build_change(self.engine.player)
         if bmsg:
             self.presentation.show_message(bmsg, 2.0)
+            # G5.8.2: refresh visual theme on BUILD COMPLETE/CHANGED
+            if self.presentation.update_theme(self.engine.player):
+                self.presentation.show_message(
+                    f"Theme: {self.presentation.active_theme.vfx_preset}", 1.5)
 
     def _decay_effects(self, delta_time: float):
         """衰减所有活跃攻击特效 + 时停倒计时。"""
@@ -147,6 +155,9 @@ class GameScene(Scene):
         eng._attack_effects = []
         eng._time_stop_remaining = 0.0
         eng._pending_damage = []
+        # G5.8.4: reset audio / boss state for new floor
+        self.audio.reset_phase2()
+        self.boss_sys._phase2 = False
         self.presentation.room_msg = ""
         self.presentation.room_msg_timer = 0.0
 
@@ -235,16 +246,23 @@ class GameScene(Scene):
         return spawned
 
     def _get_camera_offset(self) -> tuple:
-        """计算摄像机偏移——玩家居中。"""
+        """计算摄像机偏移——玩家居中 + G5.8.3 震动/冲刺/缩放。"""
         eng = self.engine
         if not eng.player:
             return 0, 0
+        p = self.presentation
         sw, sh = eng.screen.get_width(), eng.screen.get_height()
         cx = eng.player.entity.rect.centerx - sw // 2
         cy = eng.player.entity.rect.centery - sh // 2
+        # G5.8.3: dash offset
+        cx -= p.dash_offset_x
+        cy -= p.dash_offset_y
         if eng.game_map:
             cx = max(0, min(cx, eng.game_map.pixel_width - sw))
             cy = max(0, min(cy, eng.game_map.pixel_height - sh))
+        # G5.8.3: screen shake
+        sx, sy = p.get_camera_shake_offset()
+        cx += sx; cy += sy
         return int(cx), int(cy)
 
     # ═══════════════════════════════════════════════════════════
@@ -343,6 +361,7 @@ class GameScene(Scene):
         if eng.player:
             eng.player.render(screen, cam_x, cam_y)
         self._render_attack_effects(cam_x, cam_y)
+        self._render_damage_numbers(cam_x, cam_y)          # G5.8.2: themed damage floats
         self._render_hud()
 
         if not eng.inventory_open:
@@ -482,6 +501,12 @@ class GameScene(Scene):
         else:
             target.combat.take_damage(dmg)
             play_sfx("hit")
+            # G5.8.2: themed damage float + shake on big hits
+            self.presentation.spawn_themed_damage(
+                target.entity.rect.centerx, target.entity.rect.centery - 8,
+                dmg, player.attack_type == AttackType.MAGICAL)
+            if dmg >= 25:
+                self.presentation.trigger_shake(max(2, dmg // 5))
             eng._attack_effects += hit_flash_fx(
                 int(target.entity.position.x), int(target.entity.position.y),
                 target.entity.size[0])
@@ -686,6 +711,23 @@ class GameScene(Scene):
             if m.is_boss and m.combat.is_alive:
                 return m
         return None
+
+    def _check_boss_phase2(self):
+        """G5.8.4: 检测Boss进入Phase2/enrage，触发音频。"""
+        boss = self._get_boss()
+        if not boss or not boss.is_boss:
+            return
+        ai = getattr(boss, 'ai', None)
+        if ai and getattr(ai, 'is_enraged', False):
+            if not self.boss_sys._phase2:
+                self.boss_sys._phase2 = True
+                self.audio.play_boss_phase2_cue()
+                # Also trigger camera shake + VFX on phase transition
+                self.presentation.trigger_shake(8)
+                self.engine._attack_effects += play_recipe(
+                    "boss_phase2",
+                    boss.entity.rect.centerx, boss.entity.rect.centery,
+                    preset="fire")
 
     # ═══════════════════════════════════════════════════════════
     #  楼梯 & 楼层切换
@@ -1120,6 +1162,22 @@ class GameScene(Scene):
         for fx in self.engine._attack_effects:
             draw_fx_on_screen(self.engine.screen, fx, camera_x, camera_y)
 
+    def _render_damage_numbers(self, camera_x: int, camera_y: int):
+        """G5.8.2: 绘制浮动伤害数字 (主题色 3-tier)。"""
+        screen = self.engine.screen
+        font = get_font(16)
+        for df in self.presentation.damage_floats:
+            ratio = df["lifetime"] / 0.6
+            alpha = int(min(255, 255 * ratio))
+            sx = df["x"] - camera_x
+            sy = df["y"] - camera_y - int((1 - ratio) * 24)
+            c = df["color"]
+            color = (c[0], c[1], c[2], alpha) if len(c) == 3 else c
+            txt = font.render(str(df["value"]), True, color[:3])
+            txt.set_alpha(alpha)
+            screen.blit(txt, (sx - txt.get_width() // 2, sy))
+
+
     def _render_time_stop_overlay(self):
         """时停 B&W 去色层 + 中央大字倒计时。"""
         eng = self.engine
@@ -1191,6 +1249,11 @@ class GameScene(Scene):
         boss = spawn_boss(room_tx, room_ty, eng.current_floor)
         eng.monsters.append(boss)
         self.boss_sys.init_on_spawn(boss, eng.current_floor)  # D0: 生命周期
+        # G5.8.3: boss landing camera effect
+        px, py = eng.game_map.tile_to_pixel(room_tx, room_ty)
+        self.presentation.trigger_boss_landing()
+        eng._attack_effects += play_recipe("boss_phase2", px, py,
+                                           preset="fire")
 
     def _update_boss_cinematic(self, delta_time: float):
         """Boss 1秒特写倒计时 → 切换到 playing。"""

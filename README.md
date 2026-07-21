@@ -380,6 +380,7 @@ roguelike/
 | D5  | BossSystemDirector 生命周期 + Phase2/LastStand/Death 通知 | ✅ |
 | D6  | MetaProgression 局外成长 + EndingDirector 五结局 + RunSummary 统计 | ✅ |
 | G5  | C++同期同步: +5技能行为类 +AIArchetype +Boss Phase2(6Boss) +JSON全量 | ✅ |
+| G5.8 | Presentation同步: BuildTheme(12预设) + VFX Recipes(12配方) + Camera(震动/冲刺/缩放) + AudioDirector(Boss Phase2) + Timeline | ✅ |
 
 ---
 
@@ -412,6 +413,38 @@ roguelike/
 | `src/core/event_bus.py` | EventBus — 30事件类型 pub/sub (C++ parity) |
 | `src/core/replay/` | ReplayRecorder + ReplayPlayer + StateHash |
 | `src/core/sim/` | SimAI + SimRunner — 自动平衡测试 |
+
+## G5.8 Presentation同步 (2026-07-21)
+
+### G5.8.2 BuildTheme
+| 文件 | 说明 |
+|------|------|
+| `src/game/build_theme.py` | BuildTheme class — 7字段(primary/secondary/accent/name/particle_speed/explosion_scale/vfx_preset) + 12 BuildType预设 + dmg_color_for() 3级着色(≥50金/≥25主题色/≥10混合/其余灰) |
+| `src/directors/presentation_system_director.py` | +active_theme + update_theme() + spawn_themed_damage() + get_particle_speed()/get_explosion_scale() |
+| `src/scenes/game_scene.py` | BUILD COMPLETE/CHANGED → update_theme(); 伤害数字渲染接入 |
+
+### G5.8.5 VFX Recipes
+| 文件 | 说明 |
+|------|------|
+| `resources/vfx_recipes.json` | 12 recipes (melee_hit/skill_slash/fireball/heal/ice_nova/chain_lightning/boss_cone/circle_aoe/summon/time_stop/level_up/boss_phase2) + 11 color presets |
+| `src/fx_engine.py` | +play_recipe() 按名称+预设生成特效dict列表; +get_recipe_names()/get_preset_names() |
+
+### G5.8.3 Camera
+| 文件 | 说明 |
+|------|------|
+| `src/directors/presentation_system_director.py` | +dash_offset_x/y + zoom_level + boss_landing_timer + trigger_boss_landing() + set_dash_offset() + get_camera_shake_offset() |
+| `src/scenes/game_scene.py` | _get_camera_offset() 集成震动/冲刺偏移/缩放; Boss出生触发 landing 特效 |
+
+### G5.8.4 Audio Director
+| 文件 | 说明 |
+|------|------|
+| `src/directors/audio_director.py` | AudioDirector — crossfade_to()/play_boss_phase2_cue()/duck_bgm()/restore_bgm() |
+| `src/scenes/game_scene.py` | +audio实例; _check_boss_phase2() 检测狂暴→音频+VFX; enter_floor() 重置Phase2 |
+
+### G5.8.6 Timeline Recipe
+| 文件 | 说明 |
+|------|------|
+| `src/core/timeline.py` | Timeline + TimelineEvent — delay/duration/callback序列; include() 组合复用; register_timeline_recipe() 命名注册; 内置boss_intro/level_up配方 |
 
 
 ---

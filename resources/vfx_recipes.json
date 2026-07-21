@@ -1,0 +1,100 @@
+{
+  "_comment": "G5.8.5 VFX Recipes — composable visual effect definitions",
+  "_description": "Each recipe defines a sequence of primitives played together. Presets override color palette per theme.",
+  "presets": {
+    "default":  { "pulse": [255,200,50],  "arc": [255,180,60],  "bolt": [255,160,30],  "spark": [255,220,100] },
+    "fire":     { "pulse": [255,140,0],   "arc": [255,100,30],  "bolt": [255,80,20],   "spark": [255,180,40] },
+    "ice":      { "pulse": [80,200,255],   "arc": [140,230,255], "bolt": [100,220,255],  "spark": [180,240,255] },
+    "lightning":{ "pulse": [220,200,40],   "arc": [255,240,80],  "bolt": [255,220,60],   "spark": [255,250,120] },
+    "poison":   { "pulse": [100,200,50],   "arc": [140,230,80],  "bolt": [80,200,60],    "spark": [160,240,100] },
+    "time":     { "pulse": [180,160,220],  "arc": [200,180,240], "bolt": [160,140,200],  "spark": [210,190,240] },
+    "heal":     { "pulse": [80,220,120],   "arc": [120,255,160], "bolt": [60,200,90],    "spark": [160,255,180] },
+    "shadow":   { "pulse": [140,80,200],   "arc": [170,120,230], "bolt": [110,60,180],   "spark": [190,140,230] },
+    "bleed":    { "pulse": [200,40,40],    "arc": [230,70,50],   "bolt": [170,30,30],    "spark": [240,90,70] },
+    "white":    { "pulse": [200,200,200],  "arc": [230,230,230], "bolt": [180,180,180],  "spark": [240,240,240] },
+    "summon":   { "pulse": [180,140,220],  "arc": [210,170,250], "bolt": [150,110,200],  "spark": [220,180,250] }
+  },
+  "recipes": {
+    "melee_hit": {
+      "steps": [
+        { "kind": "pulse", "radius": 48, "duration": 0.35 },
+        { "kind": "spark", "count": 4, "duration": 0.25 }
+      ]
+    },
+    "skill_slash": {
+      "steps": [
+        { "kind": "slash_arc", "radius": 72, "duration": 0.35 },
+        { "kind": "cone", "radius": 64, "duration": 0.30 },
+        { "kind": "spark", "count": 8, "duration": 0.35 }
+      ]
+    },
+    "skill_fireball": {
+      "steps": [
+        { "kind": "bolt", "radius": 0, "duration": 0.45 },
+        { "kind": "pulse", "radius": 48, "duration": 0.40, "layers": 3, "layer_delay": 0.08 },
+        { "kind": "spark", "count": 14, "duration": 0.40 }
+      ]
+    },
+    "skill_heal": {
+      "steps": [
+        { "kind": "pulse", "radius": 48, "duration": 0.50 },
+        { "kind": "spark", "count": 10, "duration": 0.60 }
+      ]
+    },
+    "skill_ice_nova": {
+      "steps": [
+        { "kind": "pulse", "radius": 120, "duration": 0.50, "layers": 3, "layer_delay": 0.06 },
+        { "kind": "spark", "count": 20, "duration": 0.50 },
+        { "kind": "flash", "radius": 140, "duration": 0.15 }
+      ]
+    },
+    "skill_chain_lightning": {
+      "steps": [
+        { "kind": "bolt", "radius": 0, "duration": 0.30 },
+        { "kind": "spark", "count": 12, "duration": 0.25 },
+        { "kind": "pulse", "radius": 32, "duration": 0.25, "layers": 2, "layer_delay": 0.04 }
+      ]
+    },
+    "boss_cone_attack": {
+      "steps": [
+        { "kind": "pulse", "radius": 48, "duration": 0.50 },
+        { "kind": "pulse", "radius": 80, "duration": 0.45 },
+        { "kind": "pulse", "radius": 120, "duration": 0.40 },
+        { "kind": "spark", "count": 12, "duration": 0.50 }
+      ]
+    },
+    "boss_circle_aoe": {
+      "steps": [
+        { "kind": "pulse", "radius": 60, "duration": 0.50, "layers": 3, "layer_delay": 0.08 },
+        { "kind": "spark", "count": 16, "duration": 0.50 }
+      ]
+    },
+    "boss_summon": {
+      "steps": [
+        { "kind": "pulse", "radius": 50, "duration": 0.60, "layers": 3, "layer_delay": 0.12 },
+        { "kind": "spark", "count": 10, "duration": 0.50 }
+      ]
+    },
+    "time_stop": {
+      "steps": [
+        { "kind": "pulse", "radius": 400, "duration": 1.00 },
+        { "kind": "pulse", "radius": 600, "duration": 0.80 },
+        { "kind": "pulse", "radius": 900, "duration": 0.60 }
+      ]
+    },
+    "level_up": {
+      "steps": [
+        { "kind": "pulse", "radius": 80, "duration": 0.70 },
+        { "kind": "spark", "count": 20, "duration": 0.60 },
+        { "kind": "flash", "radius": 100, "duration": 0.20 }
+      ]
+    },
+    "boss_phase2": {
+      "steps": [
+        { "kind": "pulse", "radius": 200, "duration": 0.80, "layers": 3, "layer_delay": 0.10 },
+        { "kind": "flash", "radius": 250, "duration": 0.25 },
+        { "kind": "spark", "count": 30, "duration": 0.70 }
+      ]
+    }
+  }
+}

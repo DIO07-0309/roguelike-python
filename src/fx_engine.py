@@ -1,12 +1,17 @@
 """
 ──────────────────────────────────────────
-战斗特效引擎 — 脉冲/弧线/爆散/震屏
+战斗特效引擎 — 脉冲/弧线/爆散/震屏 + VFX Recipes
 ──────────────────────────────────────────
 
 职责：
   - 提供丰富多元的攻击/技能/Boss视觉特效。
   - 支持等级驱动（Lv1/2/3 不同规模）。
   - 支持朝向感知（弧线、锥形跟随方向）。
+  - G5.8.5: vfx_recipes.json 数据驱动 + play_recipe()
+
+设计原则：
+  - 纯函数，通过 attack_effects 列表驱动。
+  - 复用现有 _attack_effects dict 格式。
 
 设计原则：
   - 纯函数，通过 attack_effects 列表驱动。
@@ -311,3 +316,129 @@ def _draw_arc(screen, cx, cy, r, color, angle):
         ey = center[1] - int(r * 0.7 * math.sin(rad2))
         pygame.draw.line(srf, color, center, (ex, ey), 2)
     screen.blit(srf, (cx - d // 2, cy - d // 2))
+
+
+# =========================================================
+#  G5.8.5: VFX Recipes — JSON-driven composable effects
+# =========================================================
+
+import json
+import os
+import sys
+
+_recipe_cache: dict | None = None
+
+
+def _resolve_vfx_path() -> str:
+    """Resolve vfx_recipes.json path (supports PyInstaller)."""
+    base = getattr(sys, "_MEIPASS", os.getcwd())
+    alt = os.path.join(base, "resources", "vfx_recipes.json")
+    src_dir = os.path.dirname(os.path.abspath(__file__))
+    rel = os.path.join(src_dir, "..", "..", "resources", "vfx_recipes.json")
+    for p in (alt, rel):
+        if os.path.exists(p):
+            return p
+    return alt
+
+
+def _ensure_recipes_loaded():
+    """Lazy-load vfx_recipes.json into module cache."""
+    global _recipe_cache
+    if _recipe_cache is not None:
+        return
+    try:
+        path = _resolve_vfx_path()
+        with open(path, "r", encoding="utf-8") as f:
+            _recipe_cache = json.load(f)
+    except Exception as e:
+        print(f"[VFX] Failed to load recipes: {e}")
+        _recipe_cache = {"presets": {}, "recipes": {}}
+
+
+def _blend_colors(color_a: tuple, color_b: tuple, factor: float = 0.5) -> tuple:
+    """Blend two RGB colors by factor (0.0 = pure A, 1.0 = pure B)."""
+    return tuple(int(a + (b - a) * factor) for a, b in zip(color_a, color_b))
+
+
+def play_recipe(recipe_name: str, cx: int, cy: int,
+                preset: str = "default", direction=None,
+                target_cx: int = 0, target_cy: int = 0) -> list[dict]:
+    """Compose a list of effect dicts from a named recipe.
+
+    Parameters:
+        recipe_name: key in vfx_recipes.json.recipes (e.g. "melee_hit").
+        cx, cy: origin pixel coordinates.
+        preset: color preset key (e.g. "fire", "ice").
+        direction: player Direction for slash_arc.
+        target_cx, target_cy: target for bolt effects.
+
+    Returns:
+        list of effect dicts ready for _attack_effects.
+    """
+    _ensure_recipes_loaded()
+    presets = _recipe_cache.get("presets", {})
+    recipes = _recipe_cache.get("recipes", {})
+    recipe = recipes.get(recipe_name)
+    if not recipe:
+        return []
+    colors = presets.get(preset, presets.get("default", {}))
+
+    effects = []
+    for step in recipe.get("steps", []):
+        kind = step.get("kind", "pulse")
+        radius = step.get("radius", 48)
+        duration = step.get("duration", 0.35)
+        layers = step.get("layers", 1)
+        layer_delay = step.get("layer_delay", 0.08)
+        count = step.get("count", 4)
+
+        # Resolve color from preset
+        if kind in ("pulse", "arc", "cone"):
+            clr = tuple(colors.get("pulse", (255, 200, 50)))
+        elif kind == "bolt":
+            clr = tuple(colors.get("bolt", (255, 160, 30)))
+        elif kind == "spark":
+            clr = tuple(colors.get("spark", (255, 220, 100)))
+        elif kind == "flash":
+            clr = (255, 255, 255)
+        elif kind == "slash_arc":
+            clr = tuple(colors.get("arc", (255, 180, 60)))
+        else:
+            clr = tuple(colors.get("pulse", (255, 200, 50)))
+
+        for layer in range(layers):
+            layer_dur = max(0.05, duration - layer * layer_delay)
+            if kind == "spark":
+                effects += _sparks(cx, cy, count, clr, layer_dur)
+            elif kind == "slash_arc":
+                effects.append({
+                    "kind": kind, "x": cx, "y": cy,
+                    "radius": radius + layer * 10, "color": clr,
+                    "duration": layer_dur, "elapsed": 0.0,
+                    "direction": direction,
+                })
+            elif kind == "bolt":
+                effects.append({
+                    "kind": kind, "x": cx, "y": cy,
+                    "tx": target_cx or cx, "ty": target_cy or cy,
+                    "color": clr, "duration": layer_dur, "elapsed": 0.0,
+                })
+            else:
+                effects.append({
+                    "kind": kind, "x": cx, "y": cy,
+                    "radius": radius + layer * 16, "color": clr,
+                    "duration": layer_dur, "elapsed": 0.0,
+                })
+    return effects
+
+
+def get_recipe_names() -> list[str]:
+    """Return all available recipe names."""
+    _ensure_recipes_loaded()
+    return list(_recipe_cache.get("recipes", {}).keys())
+
+
+def get_preset_names() -> list[str]:
+    """Return all available preset names."""
+    _ensure_recipes_loaded()
+    return list(_recipe_cache.get("presets", {}).keys())
