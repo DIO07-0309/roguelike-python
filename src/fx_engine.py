@@ -393,43 +393,124 @@ def play_recipe(recipe_name: str, cx: int, cy: int,
         count = step.get("count", 4)
 
         # Resolve color from preset
-        if kind in ("pulse", "arc", "cone"):
-            clr = tuple(colors.get("pulse", (255, 200, 50)))
-        elif kind == "bolt":
-            clr = tuple(colors.get("bolt", (255, 160, 30)))
-        elif kind == "spark":
-            clr = tuple(colors.get("spark", (255, 220, 100)))
-        elif kind == "flash":
-            clr = (255, 255, 255)
-        elif kind == "slash_arc":
-            clr = tuple(colors.get("arc", (255, 180, 60)))
-        else:
-            clr = tuple(colors.get("pulse", (255, 200, 50)))
+def _resolve_recipe_step_color(kind: str, colors: dict) -> tuple:
+    """Resolve color from a preset dict for a given effect kind."""
+    if kind == "flash":
+        return (255, 255, 255)
+    if kind == "bolt":
+        return tuple(colors.get("bolt", (255, 160, 30)))
+    if kind == "spark":
+        return tuple(colors.get("spark", (255, 220, 100)))
+    if kind == "slash_arc":
+        return tuple(colors.get("arc", (255, 180, 60)))
+    return tuple(colors.get("pulse", (255, 200, 50)))
 
-        for layer in range(layers):
-            layer_dur = max(0.05, duration - layer * layer_delay)
-            if kind == "spark":
-                effects += _sparks(cx, cy, count, clr, layer_dur)
-            elif kind == "slash_arc":
-                effects.append({
-                    "kind": kind, "x": cx, "y": cy,
-                    "radius": radius + layer * 10, "color": clr,
-                    "duration": layer_dur, "elapsed": 0.0,
-                    "direction": direction,
-                })
-            elif kind == "bolt":
-                effects.append({
-                    "kind": kind, "x": cx, "y": cy,
-                    "tx": target_cx or cx, "ty": target_cy or cy,
-                    "color": clr, "duration": layer_dur, "elapsed": 0.0,
-                })
-            else:
-                effects.append({
-                    "kind": kind, "x": cx, "y": cy,
-                    "radius": radius + layer * 16, "color": clr,
-                    "duration": layer_dur, "elapsed": 0.0,
-                })
+
+def _make_step_effects(step: dict, cx: int, cy: int, clr: tuple,
+                       direction=None, target_cx: int = 0, target_cy: int = 0) -> list[dict]:
+    """Build effect dicts from a single recipe step."""
+    kind = step.get("kind", "pulse")
+    radius = step.get("radius", 48)
+    duration = step.get("duration", 0.35)
+    layers = step.get("layers", 1)
+    layer_delay = step.get("layer_delay", 0.08)
+    count = step.get("count", 4)
+    effects = []
+    for layer in range(layers):
+        layer_dur = max(0.05, duration - layer * layer_delay)
+        if kind == "spark":
+            effects += _sparks(cx, cy, count, clr, layer_dur)
+        elif kind == "slash_arc":
+            effects.append({
+                "kind": kind, "x": cx, "y": cy,
+                "radius": radius + layer * 10, "color": clr,
+                "duration": layer_dur, "elapsed": 0.0,
+                "direction": direction,
+            })
+        elif kind == "bolt":
+            effects.append({
+                "kind": kind, "x": cx, "y": cy,
+                "tx": target_cx or cx, "ty": target_cy or cy,
+                "color": clr, "duration": layer_dur, "elapsed": 0.0,
+            })
+        else:
+            effects.append({
+                "kind": kind, "x": cx, "y": cy,
+                "radius": radius + layer * 16, "color": clr,
+                "duration": layer_dur, "elapsed": 0.0,
+            })
     return effects
+
+
+def play_recipe(recipe_name: str, cx: int, cy: int,
+                preset: str = "default", direction=None,
+                target_cx: int = 0, target_cy: int = 0) -> list[dict]:
+    """Compose immediate (delay=0) effect dicts from a named recipe.
+
+    G5.8.8: Only returns steps without a delay field. Delayed steps
+    are handled by recipe_to_timeline().
+    """
+    _ensure_recipes_loaded()
+    presets = _recipe_cache.get("presets", {})
+    recipes = _recipe_cache.get("recipes", {})
+    recipe = recipes.get(recipe_name)
+    if not recipe:
+        return []
+    colors = presets.get(preset, presets.get("default", {}))
+    effects = []
+    for step in recipe.get("steps", []):
+        if step.get("delay", 0.0) > 0.0:
+            continue
+        clr = _resolve_recipe_step_color(step.get("kind", "pulse"), colors)
+        effects += _make_step_effects(step, cx, cy, clr, direction, target_cx, target_cy)
+    return effects
+
+
+def recipe_to_timeline(recipe_name: str, cx: int, cy: int,
+                       effects_target: list, preset: str = "default",
+                       direction=None, target_cx: int = 0, target_cy: int = 0):
+    """Build a Timeline from delayed recipe steps (G5.8.8).
+
+    Each delayed step becomes a TimelineEvent that appends
+    the generated effect dicts to effects_target when its delay elapses.
+    Steps with delay=0 are skipped (handled by play_recipe).
+
+    Returns:
+        Timeline instance ready for play() + tick(dt),
+        or None if there are no delayed steps.
+    """
+    from src.core.timeline import Timeline
+    _ensure_recipes_loaded()
+    presets = _recipe_cache.get("presets", {})
+    recipes = _recipe_cache.get("recipes", {})
+    recipe = recipes.get(recipe_name)
+    if not recipe:
+        return None
+    colors = presets.get(preset, presets.get("default", {}))
+    tl = Timeline(f"recipe:{recipe_name}")
+    has_delayed = False
+    for step in recipe.get("steps", []):
+        delay = step.get("delay", 0.0)
+        if delay <= 0.0:
+            continue
+        has_delayed = True
+        kind = step.get("kind", "pulse")
+        clr = _resolve_recipe_step_color(kind, colors)
+        dur = step.get("duration", 0.35)
+        # Capture by-value to avoid late-binding closure bugs
+        tl.add(delay, dur, _make_step_callback(
+            step, cx, cy, clr, effects_target, direction, target_cx, target_cy))
+    return tl if has_delayed else None
+
+
+def _make_step_callback(step: dict, cx: int, cy: int, clr: tuple,
+                        target: list, direction, target_cx: int, target_cy: int):
+    """Return a callable that appends step effects to target, on invocation."""
+    # Use shallow copies of mutable defaults for correct capture
+    def _cb():
+        effects = _make_step_effects(step, cx, cy, clr, direction, target_cx, target_cy)
+        target.extend(effects)
+    return _cb
 
 
 def get_recipe_names() -> list[str]:

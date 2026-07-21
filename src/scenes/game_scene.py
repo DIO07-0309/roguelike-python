@@ -69,6 +69,8 @@ class GameScene(Scene):
         self.presentation = PresentationSystemDirector()
         self.flow = GameFlowDirector()
         self.audio = AudioDirector()
+        # G5.8.8: bind effects target for Timeline scheduling
+        self.presentation.bind_effects_target(eng._attack_effects)
         self.flow.bind(self)
 
     # ═══════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 {
-  "_comment": "G5.8.7 VFX Recipes — composable visual + audio + camera definitions",
-  "_description": "Each recipe defines VFX steps, associated SFX, and camera shake intensity. Presets override color palette per theme.",
+  "_comment": "G5.8.8 VFX Recipes — staged sequences with delay + sfx + camera fields",
+  "_description": "delay=0 means immediate. Steps with delay>0 are scheduled via Timeline for dramatic sequencing.",
   "presets": {
     "default":  { "pulse": [255,200,50],  "arc": [255,180,60],  "bolt": [255,160,30],  "spark": [255,220,100] },
     "fire":     { "pulse": [255,140,0],   "arc": [255,100,30],  "bolt": [255,80,20],   "spark": [255,180,40] },
@@ -16,120 +16,100 @@
   },
   "recipes": {
     "melee_hit": {
-      "sfx": "melee",
-      "hit_sfx": "hit",
-      "camera_shake": 0,
+      "sfx": "melee", "hit_sfx": "hit", "camera_shake": 0,
       "steps": [
-        { "kind": "pulse", "radius": 48, "duration": 0.35 },
-        { "kind": "spark", "count": 4, "duration": 0.25 }
+        { "kind": "pulse", "radius": 48, "duration": 0.35, "delay": 0.0 },
+        { "kind": "spark", "count": 4, "duration": 0.25, "delay": 0.0 }
       ]
     },
     "skill_slash": {
-      "sfx": "slash",
-      "hit_sfx": "hit",
-      "camera_shake": 2,
+      "sfx": "slash", "hit_sfx": "hit", "camera_shake": 2,
       "steps": [
-        { "kind": "slash_arc", "radius": 72, "duration": 0.35 },
-        { "kind": "cone", "radius": 64, "duration": 0.30 },
-        { "kind": "spark", "count": 8, "duration": 0.35 }
+        { "kind": "slash_arc", "radius": 72, "duration": 0.35, "delay": 0.0 },
+        { "kind": "spark", "count": 4, "duration": 0.28, "delay": 0.08 },
+        { "kind": "cone", "radius": 64, "duration": 0.30, "delay": 0.15 }
       ]
     },
     "skill_fireball": {
-      "sfx": "bolt",
-      "hit_sfx": "hit",
-      "camera_shake": 4,
+      "sfx": "bolt", "hit_sfx": "hit", "camera_shake": 4,
       "steps": [
-        { "kind": "bolt", "radius": 0, "duration": 0.45 },
-        { "kind": "pulse", "radius": 48, "duration": 0.40, "layers": 3, "layer_delay": 0.08 },
-        { "kind": "spark", "count": 14, "duration": 0.40 }
+        { "kind": "bolt", "radius": 0, "duration": 0.45, "delay": 0.0 },
+        { "kind": "pulse", "radius": 48, "duration": 0.40, "layers": 3, "layer_delay": 0.08, "delay": 0.06 },
+        { "kind": "spark", "count": 14, "duration": 0.40, "delay": 0.15 }
       ]
     },
     "skill_heal": {
-      "sfx": "heal",
-      "hit_sfx": "",
-      "camera_shake": 0,
+      "sfx": "heal", "hit_sfx": "", "camera_shake": 0,
       "steps": [
-        { "kind": "pulse", "radius": 48, "duration": 0.50 },
-        { "kind": "spark", "count": 10, "duration": 0.60 }
+        { "kind": "pulse", "radius": 48, "duration": 0.50, "delay": 0.0 },
+        { "kind": "spark", "count": 10, "duration": 0.60, "delay": 0.10 }
       ]
     },
     "skill_ice_nova": {
-      "sfx": "ice_crack",
-      "hit_sfx": "hit",
-      "camera_shake": 5,
+      "sfx": "ice_crack", "hit_sfx": "hit", "camera_shake": 5,
       "steps": [
-        { "kind": "pulse", "radius": 120, "duration": 0.50, "layers": 3, "layer_delay": 0.06 },
-        { "kind": "spark", "count": 20, "duration": 0.50 },
-        { "kind": "flash", "radius": 140, "duration": 0.15 }
+        { "kind": "pulse", "radius": 120, "duration": 0.50, "layers": 3, "layer_delay": 0.06, "delay": 0.0 },
+        { "kind": "pulse", "radius": 180, "duration": 0.35, "delay": 0.12 },
+        { "kind": "spark", "count": 20, "duration": 0.50, "delay": 0.25 },
+        { "kind": "flash", "radius": 140, "duration": 0.15, "delay": 0.35 }
       ]
     },
     "skill_chain_lightning": {
-      "sfx": "lightning",
-      "hit_sfx": "hit",
-      "camera_shake": 3,
+      "sfx": "lightning", "hit_sfx": "hit", "camera_shake": 3,
       "steps": [
-        { "kind": "bolt", "radius": 0, "duration": 0.30 },
-        { "kind": "spark", "count": 12, "duration": 0.25 },
-        { "kind": "pulse", "radius": 32, "duration": 0.25, "layers": 2, "layer_delay": 0.04 }
+        { "kind": "bolt", "radius": 0, "duration": 0.30, "delay": 0.0 },
+        { "kind": "spark", "count": 8, "duration": 0.22, "delay": 0.06 },
+        { "kind": "pulse", "radius": 32, "duration": 0.25, "layers": 2, "layer_delay": 0.04, "delay": 0.10 },
+        { "kind": "spark", "count": 6, "duration": 0.20, "delay": 0.16 }
       ]
     },
     "boss_cone_attack": {
-      "sfx": "slash",
-      "hit_sfx": "hit",
-      "camera_shake": 6,
+      "sfx": "slash", "hit_sfx": "hit", "camera_shake": 6,
       "steps": [
-        { "kind": "pulse", "radius": 48, "duration": 0.50 },
-        { "kind": "pulse", "radius": 80, "duration": 0.45 },
-        { "kind": "pulse", "radius": 120, "duration": 0.40 },
-        { "kind": "spark", "count": 12, "duration": 0.50 }
+        { "kind": "pulse", "radius": 48, "duration": 0.50, "delay": 0.0 },
+        { "kind": "pulse", "radius": 80, "duration": 0.45, "delay": 0.10 },
+        { "kind": "pulse", "radius": 120, "duration": 0.40, "delay": 0.20 },
+        { "kind": "spark", "count": 12, "duration": 0.50, "delay": 0.25 }
       ]
     },
     "boss_circle_aoe": {
-      "sfx": "bolt",
-      "hit_sfx": "hit",
-      "camera_shake": 8,
+      "sfx": "bolt", "hit_sfx": "hit", "camera_shake": 8,
       "steps": [
-        { "kind": "pulse", "radius": 60, "duration": 0.50, "layers": 3, "layer_delay": 0.08 },
-        { "kind": "spark", "count": 16, "duration": 0.50 }
+        { "kind": "pulse", "radius": 60, "duration": 0.50, "layers": 3, "layer_delay": 0.08, "delay": 0.0 },
+        { "kind": "spark", "count": 16, "duration": 0.50, "delay": 0.15 }
       ]
     },
     "boss_summon": {
-      "sfx": "summon",
-      "hit_sfx": "",
-      "camera_shake": 2,
+      "sfx": "summon", "hit_sfx": "", "camera_shake": 2,
       "steps": [
-        { "kind": "pulse", "radius": 50, "duration": 0.60, "layers": 3, "layer_delay": 0.12 },
-        { "kind": "spark", "count": 10, "duration": 0.50 }
+        { "kind": "pulse", "radius": 50, "duration": 0.60, "layers": 3, "layer_delay": 0.12, "delay": 0.0 },
+        { "kind": "spark", "count": 10, "duration": 0.50, "delay": 0.20 }
       ]
     },
     "time_stop": {
-      "sfx": "timestop",
-      "hit_sfx": "",
-      "camera_shake": 0,
+      "sfx": "timestop", "hit_sfx": "", "camera_shake": 0,
       "steps": [
-        { "kind": "pulse", "radius": 400, "duration": 1.00 },
-        { "kind": "pulse", "radius": 600, "duration": 0.80 },
-        { "kind": "pulse", "radius": 900, "duration": 0.60 }
+        { "kind": "pulse", "radius": 400, "duration": 1.00, "delay": 0.0 },
+        { "kind": "pulse", "radius": 600, "duration": 0.80, "delay": 0.20 },
+        { "kind": "pulse", "radius": 900, "duration": 0.60, "delay": 0.40 }
       ]
     },
     "level_up": {
-      "sfx": "levelup",
-      "hit_sfx": "",
-      "camera_shake": 1,
+      "sfx": "levelup", "hit_sfx": "", "camera_shake": 1,
       "steps": [
-        { "kind": "pulse", "radius": 80, "duration": 0.70 },
-        { "kind": "spark", "count": 20, "duration": 0.60 },
-        { "kind": "flash", "radius": 100, "duration": 0.20 }
+        { "kind": "pulse", "radius": 80, "duration": 0.70, "delay": 0.0 },
+        { "kind": "spark", "count": 20, "duration": 0.60, "delay": 0.15 },
+        { "kind": "flash", "radius": 100, "duration": 0.20, "delay": 0.30 }
       ]
     },
     "boss_phase2": {
-      "sfx": "hit",
-      "hit_sfx": "",
-      "camera_shake": 10,
+      "sfx": "hit", "hit_sfx": "", "camera_shake": 10,
       "steps": [
-        { "kind": "pulse", "radius": 200, "duration": 0.80, "layers": 3, "layer_delay": 0.10 },
-        { "kind": "flash", "radius": 250, "duration": 0.25 },
-        { "kind": "spark", "count": 30, "duration": 0.70 }
+        { "kind": "flash", "radius": 120, "duration": 0.12, "delay": 0.0 },
+        { "kind": "flash", "radius": 250, "duration": 0.20, "delay": 0.08 },
+        { "kind": "pulse", "radius": 200, "duration": 0.80, "layers": 3, "layer_delay": 0.10, "delay": 0.25 },
+        { "kind": "spark", "count": 30, "duration": 0.70, "delay": 0.40 },
+        { "kind": "pulse", "radius": 350, "duration": 0.50, "delay": 0.70 }
       ]
     }
   }

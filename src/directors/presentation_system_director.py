@@ -94,6 +94,9 @@ class PresentationSystemDirector:
         self.shake_timer: float = 0.0
         self.shake_intensity: float = 0.0
         self.freeze_timer: float = 0.0
+        # G5.8.8: Timeline management
+        self._active_timelines: list = []
+        self._effects_target: list | None = None
         # Camera state
         self.dash_offset_x: float = 0.0
         self.dash_offset_y: float = 0.0
@@ -166,6 +169,19 @@ class PresentationSystemDirector:
             self.dash_offset_x = 0.0
         if abs(self.dash_offset_y) < 0.5:
             self.dash_offset_y = 0.0
+        # G5.8.8: advance active timelines, drop finished ones
+        for tl in self._active_timelines:
+            tl.tick(dt)
+        self._active_timelines = [tl for tl in self._active_timelines
+                                  if tl.is_playing() and not tl.is_finished()]
+
+    # ═══════════════════════════════════════════════════════
+    #  G5.8.8: Timeline binding
+    # ═══════════════════════════════════════════════════════
+
+    def bind_effects_target(self, effects_list: list):
+        """Set the mutable list that Timelines append effects to."""
+        self._effects_target = effects_list
 
     # ═══════════════════════════════════════════════════════
     #  dispatch() — unified presentation entry point
@@ -209,15 +225,27 @@ class PresentationSystemDirector:
         if not sfx:
             sfx = _RECIPE_SFX_FALLBACK.get(recipe, "")
 
-        # 4. Play VFX recipe
+        # 4. Play VFX recipe + schedule delayed steps (G5.8.8)
         effects = []
         if recipe:
-            from src.fx_engine import play_recipe
+            from src.fx_engine import play_recipe, recipe_to_timeline
+            # Immediate effects (delay=0)
             effects = play_recipe(recipe, ev.cx, ev.cy,
                                   preset=preset,
                                   direction=ev.direction,
                                   target_cx=ev.target_cx,
                                   target_cy=ev.target_cy)
+            # Delayed effects → Timeline
+            if self._effects_target is not None:
+                tl = recipe_to_timeline(recipe, ev.cx, ev.cy,
+                                        self._effects_target,
+                                        preset=preset,
+                                        direction=ev.direction,
+                                        target_cx=ev.target_cx,
+                                        target_cy=ev.target_cy)
+                if tl:
+                    tl.play()
+                    self._active_timelines.append(tl)
 
         # 5. Camera shake
         intensity = ev.intensity
