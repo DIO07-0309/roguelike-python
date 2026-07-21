@@ -192,6 +192,9 @@ class GameScene(Scene):
         if _b:
             from src.world.tile_renderer import set_tile_palette
             set_tile_palette(_b.tile_palette)
+            # G6.1: ambient biome particles
+            if _b.ambient:
+                self.presentation.set_ambient_biome(_b.ambient)
             # G6.1: biome boundary → chapter-style intro
             if _b.id != self._last_biome_id and self._last_biome_id:
                 self.presentation.chapter_intro_active = True
@@ -212,7 +215,10 @@ class GameScene(Scene):
             self.audio.crossfade_to("boss")
         else:
             self._state = "playing"
-            self.audio.crossfade_to("dungeon")
+            # G6.1: biome BGM (prison/volcano/abyss), falls back to dungeon
+            from src.game.biome import get_biome_for_floor
+            bg = get_biome_for_floor(floor_num)
+            self.audio.crossfade_to(bg.bgm if bg and bg.bgm else "dungeon")
         eng._bgm_stopped_for_title = False
 
         # D1: 楼层入场演出
@@ -393,6 +399,7 @@ class GameScene(Scene):
         if eng.player:
             eng.player.render(screen, cam_x, cam_y)
         self._render_attack_effects(cam_x, cam_y)
+        self.presentation.render_ambient(screen)             # G6.1: biome ambient particles
         self._render_damage_numbers(cam_x, cam_y)          # G5.8.2: themed damage floats
         self._render_hud()
 

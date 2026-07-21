@@ -527,7 +527,7 @@ def _build_drum_pattern(total_samples: int, beat_dur: float,
                     snares.append((t / SR, _snare))
                 # 踩镲 8分
                 hats.append((t / SR, _hihat))
-                hats.append((t + int(SR * beat_dur / 2)) / SR, _hihat)
+                hats.append(((t + int(SR * beat_dur / 2)) / SR, _hihat))
 
     all_events = kicks + snares + hats + toms
     return _render_drums(all_events, total_samples)
@@ -581,6 +581,20 @@ def _ensure_loaded(name: str):
         elif name == "dungeon":
             snd = _compile_bgm(DUNGEON_CHORDS, DUNGEON_MELODY,
                                bpm=BPM["dungeon"], melody_wave="square",
+                               chord_wave="sine", drum_style="sparse")
+        # ── G6.1: Biome-specific dungeon variants ──
+        elif name == "prison":
+            snd = _compile_bgm(DUNGEON_CHORDS, DUNGEON_MELODY,
+                               bpm=72, melody_wave="square",
+                               chord_wave="sine", drum_style="sparse")
+        elif name == "volcano":
+            snd = _compile_bgm(DUNGEON_CHORDS, DUNGEON_MELODY,
+                               bpm=90, melody_wave="saw",
+                               chord_wave="triangle",
+                               bass_wave="triangle", drum_style="standard")
+        elif name == "abyss":
+            snd = _compile_bgm(DUNGEON_CHORDS, DUNGEON_MELODY,
+                               bpm=62, melody_wave="triangle",
                                chord_wave="sine", drum_style="sparse")
         elif name == "boss":
             snd = _compile_bgm(BOSS_CHORDS, BOSS_MELODY, BOSS_BASS,

@@ -123,6 +123,10 @@ class PresentationSystemDirector:
         self.show_boss_cmd: bool = False
         self.show_boss_report: bool = False
         self.combat_juice_on: bool = True
+        # G6.1: Ambient biome particles
+        self.ambient_particles: list = []
+        self._ambient_cfg: dict = {}
+        self._ambient_timer: float = 0.0
 
     # ═══════════════════════════════════════════════════════
     #  tick() — per-frame state decay
@@ -174,6 +178,8 @@ class PresentationSystemDirector:
             tl.tick(dt)
         self._active_timelines = [tl for tl in self._active_timelines
                                   if tl.is_playing() and not tl.is_finished()]
+        # G6.1: ambient biome particles
+        self._tick_ambient(dt)
 
     # ═══════════════════════════════════════════════════════
     #  G5.8.8: Timeline binding
@@ -345,6 +351,54 @@ class PresentationSystemDirector:
         intensity = int(self.shake_intensity * ratio)
         return (random.randint(-intensity, intensity),
                 random.randint(-intensity, intensity))
+
+    # ── G6.1: Ambient biome particles ─────────────────────
+
+    def set_ambient_biome(self, biome_ambient: dict):
+        """Swap to a new ambient particle configuration."""
+        self._ambient_cfg = dict(biome_ambient)
+        self._ambient_timer = 0.0
+        # Keep existing particles — they naturally decay
+
+    def _tick_ambient(self, dt: float):
+        """Spawn and decay ambient particles per biome config."""
+        cfg = self._ambient_cfg
+        if not cfg or cfg.get("count", 0) <= 0:
+            return
+        import random, sys as _sys
+        # Decay existing
+        for p in self.ambient_particles:
+            p["life"] -= dt
+        self.ambient_particles = [p for p in self.ambient_particles if p["life"] > 0]
+        # Spawn new to maintain target count
+        target = cfg["count"]
+        self._ambient_timer -= dt
+        spawn_interval = 0.08
+        while self._ambient_timer <= 0 and len(self.ambient_particles) < target:
+            self._ambient_timer += spawn_interval
+            screen_w = 960
+            screen_h = 640
+            self.ambient_particles.append({
+                "x": random.randint(0, screen_w),
+                "y": screen_h + random.randint(5, 30) if cfg.get("rise") else random.randint(0, screen_h),
+                "size": random.uniform(cfg["size_min"], cfg["size_max"]),
+                "speed": random.uniform(cfg["speed"] * 0.7, cfg["speed"] * 1.3),
+                "color": cfg["color"],
+                "life": random.uniform(cfg["life_min"], cfg["life_max"]),
+            })
+
+    def render_ambient(self, screen):
+        """Draw biome ambient particles (called from game_scene render)."""
+        for p in self.ambient_particles:
+            alpha = int(min(255, 90 * min(1.0, p["life"] / 2.0)))
+            c = p["color"]
+            import pygame
+            srf = pygame.Surface((int(p["size"] * 2 + 2), int(p["size"] * 2 + 2)),
+                                 pygame.SRCALPHA)
+            pygame.draw.circle(srf, (c[0], c[1], c[2], alpha),
+                               (int(p["size"]) + 1, int(p["size"]) + 1),
+                               int(p["size"]))
+            screen.blit(srf, (int(p["x"]), int(p["y"])))
 
     # ── Queries ───────────────────────────────────────────
 

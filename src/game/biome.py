@@ -24,6 +24,8 @@ class BiomeDef:
     enemy_weights: list[float]
     boss_id: str
     floor_narrative_hook: str
+    bgm: str                     # "prison" | "volcano" | "abyss" | "boss"
+    ambient: dict                # particle config: count/color/size/speed/rise/life
 
     def contains_floor(self, floor: int) -> bool:
         return self.floor_range[0] <= floor <= self.floor_range[1]
@@ -57,9 +59,19 @@ def load_biome_defs(json_path: str = "resources/biomes.json") -> bool:
     _biomes = []
     _floor_to_biome = {}
     for obj in data:
+        ambient_raw = obj.get("ambient", {})
+        ambient = {
+            "count": ambient_raw.get("count", 0),
+            "color": tuple(ambient_raw.get("color", [160, 140, 220])),
+            "size_min": ambient_raw.get("size_min", 1.0),
+            "size_max": ambient_raw.get("size_max", 3.0),
+            "speed": ambient_raw.get("speed", 10),
+            "rise": ambient_raw.get("rise", True),
+            "life_min": ambient_raw.get("life_min", 2.0),
+            "life_max": ambient_raw.get("life_max", 6.0),
+        }
         b = BiomeDef(
-            id=obj["id"],
-            name=obj["name"],
+            id=obj["id"], name=obj["name"],
             name_en=obj.get("name_en", ""),
             floor_range=obj["floor_range"],
             tile_palette={k: tuple(v) for k, v in obj.get("tile_palette", {}).items()},
@@ -67,6 +79,8 @@ def load_biome_defs(json_path: str = "resources/biomes.json") -> bool:
             enemy_weights=obj.get("enemy_weights", []),
             boss_id=obj.get("boss_id", ""),
             floor_narrative_hook=obj.get("floor_narrative_hook", ""),
+            bgm=obj.get("bgm", ""),
+            ambient=ambient,
         )
         _biomes.append(b)
         for f in range(b.floor_range[0], b.floor_range[1] + 1):

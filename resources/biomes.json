@@ -5,22 +5,23 @@
     "name_en": "Forgotten Prison",
     "floor_range": [1, 5],
     "tile_palette": {
-      "wall_top": [72, 68, 62],
-      "wall_face": [42, 38, 34],
-      "wall_brick": [50, 46, 42],
-      "wall_moss": [55, 70, 40],
-      "wall_highlight": [90, 85, 78],
-      "floor_base": [115, 108, 95],
-      "floor_joint": [95, 88, 75],
-      "floor_dirt": [100, 93, 80],
-      "floor_b": [105, 100, 88],
-      "floor_c": [110, 102, 92],
-      "grid_line": [50, 45, 38]
+      "wall_top": [72, 68, 62], "wall_face": [42, 38, 34], "wall_brick": [50, 46, 42],
+      "wall_moss": [55, 70, 40], "wall_highlight": [90, 85, 78],
+      "floor_base": [115, 108, 95], "floor_joint": [95, 88, 75], "floor_dirt": [100, 93, 80],
+      "floor_b": [105, 100, 88], "floor_c": [110, 102, 92], "grid_line": [50, 45, 38]
     },
     "enemy_pool": ["skeleton_archer", "bone_soldier", "slime", "shadow_stalker"],
     "enemy_weights": [35, 30, 20, 15],
     "boss_id": "5",
-    "floor_narrative_hook": "地牢入口"
+    "floor_narrative_hook": "地牢入口",
+    "bgm": "prison",
+    "ambient": {
+      "count": 6,
+      "color": [140, 135, 150],
+      "size_min": 1.0, "size_max": 2.5,
+      "speed": 12, "rise": true,
+      "life_min": 2.5, "life_max": 6.0
+    }
   },
   {
     "id": "ash_volcano",
@@ -28,22 +29,23 @@
     "name_en": "Ash Volcano",
     "floor_range": [6, 10],
     "tile_palette": {
-      "wall_top": [85, 40, 25],
-      "wall_face": [50, 22, 15],
-      "wall_brick": [60, 30, 20],
-      "wall_moss": [70, 45, 20],
-      "wall_highlight": [110, 60, 35],
-      "floor_base": [70, 35, 20],
-      "floor_joint": [55, 25, 15],
-      "floor_dirt": [65, 30, 18],
-      "floor_b": [60, 30, 18],
-      "floor_c": [75, 38, 22],
-      "grid_line": [45, 22, 15]
+      "wall_top": [85, 40, 25], "wall_face": [50, 22, 15], "wall_brick": [60, 30, 20],
+      "wall_moss": [70, 45, 20], "wall_highlight": [110, 60, 35],
+      "floor_base": [70, 35, 20], "floor_joint": [55, 25, 15], "floor_dirt": [65, 30, 18],
+      "floor_b": [60, 30, 18], "floor_c": [75, 38, 22], "grid_line": [45, 22, 15]
     },
     "enemy_pool": ["fire_imp", "elite_orc", "orc", "charger"],
     "enemy_weights": [30, 25, 25, 20],
     "boss_id": "10",
-    "floor_narrative_hook": "幽暗深渊"
+    "floor_narrative_hook": "幽暗深渊",
+    "bgm": "volcano",
+    "ambient": {
+      "count": 12,
+      "color": [255, 120, 30],
+      "size_min": 1.0, "size_max": 3.0,
+      "speed": 20, "rise": true,
+      "life_min": 1.5, "life_max": 4.0
+    }
   },
   {
     "id": "void_abyss",
@@ -51,21 +53,22 @@
     "name_en": "Void Abyss",
     "floor_range": [11, 15],
     "tile_palette": {
-      "wall_top": [55, 38, 65],
-      "wall_face": [28, 18, 38],
-      "wall_brick": [38, 25, 48],
-      "wall_moss": [50, 25, 55],
-      "wall_highlight": [75, 55, 85],
-      "floor_base": [45, 32, 55],
-      "floor_joint": [35, 22, 45],
-      "floor_dirt": [42, 28, 50],
-      "floor_b": [38, 28, 50],
-      "floor_c": [50, 35, 58],
-      "grid_line": [28, 18, 38]
+      "wall_top": [55, 38, 65], "wall_face": [28, 18, 38], "wall_brick": [38, 25, 48],
+      "wall_moss": [50, 25, 55], "wall_highlight": [75, 55, 85],
+      "floor_base": [45, 32, 55], "floor_joint": [35, 22, 45], "floor_dirt": [42, 28, 50],
+      "floor_b": [38, 28, 50], "floor_c": [50, 35, 58], "grid_line": [28, 18, 38]
     },
     "enemy_pool": ["shadow_stalker", "dark_mage", "shadow_assassin", "void_walker"],
     "enemy_weights": [30, 30, 25, 15],
     "boss_id": "15",
-    "floor_narrative_hook": "熔岩炼狱"
+    "floor_narrative_hook": "熔岩炼狱",
+    "bgm": "abyss",
+    "ambient": {
+      "count": 10,
+      "color": [100, 60, 140],
+      "size_min": 1.5, "size_max": 4.0,
+      "speed": 8, "rise": true,
+      "life_min": 3.0, "life_max": 8.0
+    }
   }
 ]

@@ -400,6 +400,31 @@ roguelike/
 | G5.8.6 | Timeline: delay/duration/callback sequenced events + include() | ✅ |
 | G5.8.7 | Presentation Integration: PresentationEvent + dispatch() unified pipeline | ✅ |
 | G5.8.8 | Timeline Presentation: 12 recipes with staged delays | ✅ |
+| G6.1 | Biome System: 3 biomes (Prison/Volcano/Abyss) + tile_palette/enemy_pool/boss + ambient particles + biome BGM | ✅ |
+
+---
+
+## G6 World Expansion (2026-07-21)
+
+### G6.1 Biome System
+
+将 15 层地牢划分为 3 个主题区域，每个区域独立视觉/音频/敌人/Boss：
+
+| 楼层 | Biome | BGM | 瓦片色 | 敌人 | Boss |
+|:---|:---|:---|:---|:---|:---|
+| 1–5 | Forgotten Prison 遗忘监牢 | `prison` (72BPM square/sparse) | 暗紫灰石墙 | skeleton_archer, bone_soldier, slime, shadow_stalker | 暗影骑士 (F5) |
+| 6–10 | Ash Volcano 灰烬火山 | `volcano` (90BPM saw/standard) | 暗红暖色墙 | fire_imp, elite_orc, orc, charger | 地狱火魔 (F10) |
+| 11–15 | Void Abyss 虚空深渊 | `abyss` (62BPM triangle/sparse) | 深紫黑墙 | shadow_stalker, dark_mage, shadow_assassin, void_walker | 深渊之主 (F15) |
+
+**Ambient Layer（环境粒子）**：
+| Biome | 粒子数 | 颜色 | 速度 | 效果 |
+|:---|:---|:---|:---|:---|
+| Prison | 6 | (140,135,150) 灰紫 | 12 | 缓慢上升的尘埃 |
+| Volcano | 12 | (255,120,30) 橙红 | 20 | 快速上升的余烬 |
+| Abyss | 10 | (100,60,140) 深紫 | 8 | 缓慢漂浮的虚空粒子 |
+
+**数据驱动**：`resources/biomes.json` 定义所有 Biome 参数，`src/game/biome.py` 加载/查询。
+跨 Biome 边界（F5→F6, F10→F11）触发章节过渡演出 + "进入 XXX" 消息条。
 
 ---
 
