@@ -1,6 +1,6 @@
 {
-  "_comment": "G5.8.5 VFX Recipes — composable visual effect definitions",
-  "_description": "Each recipe defines a sequence of primitives played together. Presets override color palette per theme.",
+  "_comment": "G5.8.7 VFX Recipes — composable visual + audio + camera definitions",
+  "_description": "Each recipe defines VFX steps, associated SFX, and camera shake intensity. Presets override color palette per theme.",
   "presets": {
     "default":  { "pulse": [255,200,50],  "arc": [255,180,60],  "bolt": [255,160,30],  "spark": [255,220,100] },
     "fire":     { "pulse": [255,140,0],   "arc": [255,100,30],  "bolt": [255,80,20],   "spark": [255,180,40] },
@@ -16,12 +16,18 @@
   },
   "recipes": {
     "melee_hit": {
+      "sfx": "melee",
+      "hit_sfx": "hit",
+      "camera_shake": 0,
       "steps": [
         { "kind": "pulse", "radius": 48, "duration": 0.35 },
         { "kind": "spark", "count": 4, "duration": 0.25 }
       ]
     },
     "skill_slash": {
+      "sfx": "slash",
+      "hit_sfx": "hit",
+      "camera_shake": 2,
       "steps": [
         { "kind": "slash_arc", "radius": 72, "duration": 0.35 },
         { "kind": "cone", "radius": 64, "duration": 0.30 },
@@ -29,6 +35,9 @@
       ]
     },
     "skill_fireball": {
+      "sfx": "bolt",
+      "hit_sfx": "hit",
+      "camera_shake": 4,
       "steps": [
         { "kind": "bolt", "radius": 0, "duration": 0.45 },
         { "kind": "pulse", "radius": 48, "duration": 0.40, "layers": 3, "layer_delay": 0.08 },
@@ -36,12 +45,18 @@
       ]
     },
     "skill_heal": {
+      "sfx": "heal",
+      "hit_sfx": "",
+      "camera_shake": 0,
       "steps": [
         { "kind": "pulse", "radius": 48, "duration": 0.50 },
         { "kind": "spark", "count": 10, "duration": 0.60 }
       ]
     },
     "skill_ice_nova": {
+      "sfx": "ice_crack",
+      "hit_sfx": "hit",
+      "camera_shake": 5,
       "steps": [
         { "kind": "pulse", "radius": 120, "duration": 0.50, "layers": 3, "layer_delay": 0.06 },
         { "kind": "spark", "count": 20, "duration": 0.50 },
@@ -49,6 +64,9 @@
       ]
     },
     "skill_chain_lightning": {
+      "sfx": "lightning",
+      "hit_sfx": "hit",
+      "camera_shake": 3,
       "steps": [
         { "kind": "bolt", "radius": 0, "duration": 0.30 },
         { "kind": "spark", "count": 12, "duration": 0.25 },
@@ -56,6 +74,9 @@
       ]
     },
     "boss_cone_attack": {
+      "sfx": "slash",
+      "hit_sfx": "hit",
+      "camera_shake": 6,
       "steps": [
         { "kind": "pulse", "radius": 48, "duration": 0.50 },
         { "kind": "pulse", "radius": 80, "duration": 0.45 },
@@ -64,18 +85,27 @@
       ]
     },
     "boss_circle_aoe": {
+      "sfx": "bolt",
+      "hit_sfx": "hit",
+      "camera_shake": 8,
       "steps": [
         { "kind": "pulse", "radius": 60, "duration": 0.50, "layers": 3, "layer_delay": 0.08 },
         { "kind": "spark", "count": 16, "duration": 0.50 }
       ]
     },
     "boss_summon": {
+      "sfx": "summon",
+      "hit_sfx": "",
+      "camera_shake": 2,
       "steps": [
         { "kind": "pulse", "radius": 50, "duration": 0.60, "layers": 3, "layer_delay": 0.12 },
         { "kind": "spark", "count": 10, "duration": 0.50 }
       ]
     },
     "time_stop": {
+      "sfx": "timestop",
+      "hit_sfx": "",
+      "camera_shake": 0,
       "steps": [
         { "kind": "pulse", "radius": 400, "duration": 1.00 },
         { "kind": "pulse", "radius": 600, "duration": 0.80 },
@@ -83,6 +113,9 @@
       ]
     },
     "level_up": {
+      "sfx": "levelup",
+      "hit_sfx": "",
+      "camera_shake": 1,
       "steps": [
         { "kind": "pulse", "radius": 80, "duration": 0.70 },
         { "kind": "spark", "count": 20, "duration": 0.60 },
@@ -90,6 +123,9 @@
       ]
     },
     "boss_phase2": {
+      "sfx": "hit",
+      "hit_sfx": "",
+      "camera_shake": 10,
       "steps": [
         { "kind": "pulse", "radius": 200, "duration": 0.80, "layers": 3, "layer_delay": 0.10 },
         { "kind": "flash", "radius": 250, "duration": 0.25 },

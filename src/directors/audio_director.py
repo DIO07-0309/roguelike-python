@@ -1,20 +1,19 @@
 """
-G5.8.4: AudioDirector — BGM layer/mix control + boss Phase2 cue
+G5.8.7: AudioDirector — BGM layer/mix control + unified SFX dispatch
 
-Wraps bgm_engine / sfx_engine with:
-  - Cross-fade between BGM tracks (fade-out → swap → fade-in).
-  - Boss Phase2 audio cue (layered percussion burst on enrage).
-  - Volume ducking for high-priority SFX.
+Presentation consumers via on_presentation_event().
+BGM: crossfade, ducking, boss phase2 intensity boost.
+SFX: single entry point replacing direct play_sfx() calls.
 """
 
-from src.bgm_engine import play_bgm, stop_bgm, _bgm_channel, _bgm_cache
+from src.bgm_engine import play_bgm, stop_bgm
 
 
 class AudioDirector:
     """BGM layer controller — crossfade, boss cues, ducking.
 
-    Instantiated once in GameScene; coordinates with BossSystemDirector
-    to trigger audio transitions on boss state changes.
+    G5.8.7: on_presentation_event() is the unified audio dispatch.
+    PresentationSystemDirector calls it; gameplay never touches audio directly.
     """
 
     def __init__(self):
@@ -25,13 +24,30 @@ class AudioDirector:
         self._next_bgm: str = ""
         self._phase2_played: bool = False
 
+    # ── G5.8.7: Unified SFX entry ──────────────────────────
+
+    def on_presentation_event(self, sfx: str, vol: float = 0.6):
+        """Play a sound effect for a presentation event.
+
+        G5.8.7: All SFX flows through this method.
+        High-priority SFX (timestop) auto-ducks BGM.
+        """
+        if not sfx:
+            return
+        from src.sfx_engine import play_sfx
+        # Timestop = full volume + duck BGM during playback
+        if sfx == "timestop":
+            self.duck_bgm(0.10)
+            play_sfx(sfx, 1.0)
+        else:
+            # Heavy sounds duck BGM slightly
+            if sfx in ("hit", "bolt", "ice_crack", "lightning", "slash"):
+                self.duck_bgm(0.25, 0.15)
+            play_sfx(sfx, vol)
+
     # ── Cross-fade ─────────────────────────────────────────
 
     def crossfade_to(self, name: str, duration: float = 0.6):
-        """Fade out current BGM, then fade in the new track.
-
-        If no BGM is playing, start the new track immediately.
-        """
         if name == self._current_bgm and not self._fading:
             return
         if not self._current_bgm:
@@ -43,7 +59,6 @@ class AudioDirector:
         self._fade_duration = duration
 
     def tick(self, dt: float):
-        """Per-frame crossfade update — call from GameScene.update()."""
         if not self._fading:
             return
         self._fade_timer -= dt
@@ -51,47 +66,38 @@ class AudioDirector:
             self._fade_timer = 0
             self._fading = False
             self._play_now(self._next_bgm)
-        elif _bgm_channel:
-            ratio = self._fade_timer / self._fade_duration
-            _bgm_channel.set_volume(0.45 * ratio)
+        else:
+            self._ramp_bgm_volume(0.45 * (self._fade_timer / self._fade_duration))
 
     def _play_now(self, name: str):
-        """Immediate BGM switch (no fade)."""
         self._current_bgm = name
         play_bgm(name)
+
+    def _ramp_bgm_volume(self, vol: float):
+        """Set BGM channel volume (internal — avoids direct _bgm_channel access)."""
+        from src.bgm_engine import _bgm_channel
+        if _bgm_channel:
+            _bgm_channel.set_volume(vol)
 
     # ── Boss Phase2 cue ────────────────────────────────────
 
     def play_boss_phase2_cue(self):
-        """Play a layered burst when boss enters Phase2/enrage.
-
-        Adds a heavy-hitting SFX on top of the current BGM without
-        interrupting it, then slightly boosts BGM volume for intensity.
-        """
         if self._phase2_played:
             return
         self._phase2_played = True
-        from src.sfx_engine import play_sfx
-        # Heavy hit + low rumble for enrage announcement
-        play_sfx("hit", 0.9)
-        if _bgm_channel:
-            _bgm_channel.set_volume(0.55)  # boost BGM intensity
+        self.on_presentation_event("hit", 0.9)
+        self._ramp_bgm_volume(0.55)
 
     def reset_phase2(self):
-        """Reset phase2 flag for new boss fight."""
         self._phase2_played = False
 
     # ── Ducking ────────────────────────────────────────────
 
     def duck_bgm(self, duck_volume: float = 0.15, duration: float = 0.5):
-        """Temporarily lower BGM volume (e.g. for dialogue)."""
-        if _bgm_channel:
-            _bgm_channel.set_volume(duck_volume)
+        self._ramp_bgm_volume(duck_volume)
 
     def restore_bgm(self, volume: float = 0.45):
-        """Restore BGM after ducking."""
-        if _bgm_channel:
-            _bgm_channel.set_volume(volume)
+        self._ramp_bgm_volume(volume)
 
     # ── State queries ──────────────────────────────────────
 
@@ -100,7 +106,7 @@ class AudioDirector:
         return self._current_bgm
 
 
-# Singleton convenience
+# Singleton
 _audio_director: AudioDirector | None = None
 
 

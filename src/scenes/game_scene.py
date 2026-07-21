@@ -38,12 +38,9 @@ from src.systems.buff_system import (get_effective_attack, get_effective_speed,
                                       get_buff_display_name, get_buff_short_name,
                                       get_buff_hud_color, format_buff_time,
                                       tick_buffs, apply_triggers)
-from src.fx_engine import (player_attack_fx, slash_skill_fx, fireball_fx,
-                            heal_fx, monsters_attack_fx, boss_cone_fx,
-                            boss_circle_fx, boss_summon_fx, time_stop_fx,
-                            hit_flash_fx, draw_fx_on_screen, play_recipe)
-from src.sfx_engine import play_sfx
-from src.bgm_engine import (play_dungeon_bgm, play_boss_bgm, stop_bgm,
+from src.fx_engine import (player_attack_fx, time_stop_fx,
+                            hit_flash_fx, draw_fx_on_screen)
+from src.bgm_engine import (stop_bgm,
                              init_bgm)
 from src.systems.relic_system import (get_relic_def, get_relic_short_name,
                                        get_relic_display_name, get_relic_hud_color,
@@ -63,7 +60,8 @@ class GameScene(Scene):
         # D0: 四个 Director (纯骨架，不影响现有行为)
         from src.directors.boss_system_director import BossSystemDirector
         from src.directors.gameplay_system_director import GameplaySystemDirector
-        from src.directors.presentation_system_director import PresentationSystemDirector
+        from src.directors.presentation_system_director import (PresentationSystemDirector,
+                                                                     PresentationEvent)
         from src.directors.game_flow_director import GameFlowDirector
         from src.directors.audio_director import AudioDirector
         self.boss_sys = BossSystemDirector()
@@ -187,10 +185,10 @@ class GameScene(Scene):
         if fcfg.is_boss:
             eng._boss_intro_data = get_boss_info(floor_num)
             self._state = "boss_intro"
-            play_boss_bgm()
+            self.audio.crossfade_to("boss")
         else:
             self._state = "playing"
-            play_dungeon_bgm()
+            self.audio.crossfade_to("dungeon")
         eng._bgm_stopped_for_title = False
 
         # D1: 楼层入场演出
@@ -483,15 +481,16 @@ class GameScene(Scene):
     # ═══════════════════════════════════════════════════════════
 
     def _handle_player_attack(self):
-        """普攻 — 找最近目标 → 伤害计算 → SFX + 特效。"""
+        """普攻 — 找最近目标 → 伤害计算 → G5.8.7 dispatch。"""
         eng = self.engine
         player = eng.player
         if not player or not player.combat.is_alive or not player.can_attack(eng._game_time):
             return
         cr = player.entity.rect
+        # Swing VFX + SFX (always plays, even on miss)
         eng._attack_effects += player_attack_fx(
             cr.centerx, cr.centery, int(PLAYER_ATTACK_RANGE * TILE_SIZE))
-        play_sfx("melee")
+        self.audio.on_presentation_event("melee")
         target = find_attack_target(player.entity.rect, eng.monsters, PLAYER_ATTACK_RANGE)
         if target is None:
             return
@@ -504,13 +503,15 @@ class GameScene(Scene):
             eng._pending_damage.append((target, dmg))
         else:
             target.combat.take_damage(dmg)
-            play_sfx("hit")
-            # G5.8.2: themed damage float + shake on big hits
-            self.presentation.spawn_themed_damage(
-                target.entity.rect.centerx, target.entity.rect.centery - 8,
-                dmg, player.attack_type == AttackType.MAGICAL)
-            if dmg >= 25:
-                self.presentation.trigger_shake(max(2, dmg // 5))
+            # G5.8.7: unified hit reaction via dispatch
+            ev = PresentationEvent(
+                kind="melee_hit",
+                cx=target.entity.rect.centerx,
+                cy=target.entity.rect.centery,
+                dmg=dmg,
+                dmg_is_magic=(player.attack_type == AttackType.MAGICAL),
+                sfx_override="hit")
+            eng._attack_effects += self.presentation.dispatch(ev)
             eng._attack_effects += hit_flash_fx(
                 int(target.entity.position.x), int(target.entity.position.y),
                 target.entity.size[0])
@@ -542,21 +543,28 @@ class GameScene(Scene):
         if result and "冷却中" not in result:
             eng._time_stop_remaining = skill.get_stop_duration()
             eng._pending_damage = []
-            play_sfx("timestop", 1.0)
-            fx = time_stop_fx(eng.player.entity.rect.centerx,
-                              eng.player.entity.rect.centery)
+            ev = PresentationEvent(kind="time_stop",
+                                   cx=eng.player.entity.rect.centerx,
+                                   cy=eng.player.entity.rect.centery)
+            fx = self.presentation.dispatch(ev) + time_stop_fx(
+                eng.player.entity.rect.centerx,
+                eng.player.entity.rect.centery)
             for f in fx:
                 f["duration"] = min(f["duration"], eng._time_stop_remaining * 0.3)
             eng._attack_effects += fx
 
     def _use_skill_in_time_stop(self, skill, index: int):
-        """时停期间技能 — 伤害暂存不结算。"""
+        """时停期间技能 — 伤害暂存，VFX via dispatch。"""
         eng = self.engine
         pre_hp = {id(m): m.combat.current_hp for m in eng.monsters}
         result = eng.player.skills.use_active(
             index, eng.player, eng.monsters, eng.game_map, eng._game_time)
         if result and "冷却中" not in result:
-            self._add_skill_effect(skill)
+            cx = eng.player.entity.rect.centerx
+            cy = eng.player.entity.rect.centery
+            ev = PresentationEvent(kind="skill_cast", skill_name=skill.name,
+                                   cx=cx, cy=cy, direction=eng.player.direction)
+            eng._attack_effects += self.presentation.dispatch(ev)
         if result:
             for m in eng.monsters:
                 if id(m) in pre_hp:
@@ -567,17 +575,28 @@ class GameScene(Scene):
                         m.combat.is_alive = True
 
     def _use_skill_normal(self, skill, index: int):
-        """正常释放技能 + G5.8 伤害数字/震屏 + 死亡处理。"""
+        """正常释放技能 — G5.8.7: dispatch 统一处理 VFX/SFX/震屏/伤害数字。"""
         eng = self.engine
-        # G5.8: track pre-HP for damage floats
+        cx = eng.player.entity.rect.centerx
+        cy = eng.player.entity.rect.centery
+        # Track pre-HP for damage floats
         pre_hp = {id(m): m.combat.current_hp for m in eng.monsters if m.combat.is_alive}
         result = eng.player.skills.use_active(
             index, eng.player, eng.monsters, eng.game_map, eng._game_time)
         if result and "冷却中" not in result:
-            self._add_skill_effect(skill)
-            # G5.8: spawn themed damage floats for each damaged target
-            total_dmg = 0
+            # G5.8.7: unified cast dispatch — VFX + SFX from skill name
             from src.entities.components import AttackType
+            t = find_attack_target(eng.player.entity.rect, eng.monsters, 10.0)
+            ev = PresentationEvent(
+                kind="skill_cast",
+                skill_name=skill.name, skill_level=skill.level,
+                cx=cx, cy=cy,
+                target_cx=(t.entity.rect.centerx if t else cx + 100),
+                target_cy=(t.entity.rect.centery if t else cy),
+                direction=eng.player.direction)
+            eng._attack_effects += self.presentation.dispatch(ev)
+            # Per-target themed damage numbers
+            total_dmg = 0
             is_magic = getattr(skill, 'attack_type', None) == AttackType.MAGICAL
             for m in eng.monsters:
                 hp_before = pre_hp.get(id(m), 0)
@@ -594,50 +613,6 @@ class GameScene(Scene):
             for m in dead:
                 self._on_monster_killed(m)
                 eng.monsters.remove(m)
-
-    def _add_skill_effect(self, skill):
-        """根据技能类型+等级写入视觉特效 (G5.8: play_recipe theme-aware)。"""
-        eng = self.engine
-        if not eng.player:
-            return
-        cx = eng.player.entity.rect.centerx
-        cy = eng.player.entity.rect.centery
-        lv, name = skill.level, skill.name
-        # Resolve theme preset from active BuildTheme
-        preset = self.presentation.active_theme.vfx_preset
-        if name == "斩击":
-            eng._attack_effects += slash_skill_fx(cx, cy, eng.player.direction, lv)
-            play_sfx("slash")
-        elif name == "神罚":
-            t = find_attack_target(eng.player.entity.rect, eng.monsters, 10.0)
-            tx = t.entity.rect.centerx if t else cx + 100
-            ty = t.entity.rect.centery if t else cy
-            eng._attack_effects += fireball_fx(cx, cy, tx, ty, lv)
-            play_sfx("bolt")
-        elif name == "自愈":
-            eng._attack_effects += heal_fx(cx, cy, lv)
-            play_sfx("heal")
-        # ── G5.8: G5 sync skills ──
-        elif name == "冰爆":
-            eng._attack_effects += play_recipe("skill_ice_nova", cx, cy, preset="ice")
-            play_sfx("ice_crack")
-        elif name == "连锁闪电":
-            t = find_attack_target(eng.player.entity.rect, eng.monsters, 8.0)
-            tx = t.entity.rect.centerx if t else cx + 80
-            ty = t.entity.rect.centery if t else cy
-            eng._attack_effects += play_recipe("skill_chain_lightning", cx, cy,
-                                               preset="lightning", target_cx=tx, target_cy=ty)
-            play_sfx("lightning")
-        elif name == "暗影突刺":
-            eng._attack_effects += play_recipe("skill_slash", cx, cy, preset="shadow",
-                                               direction=eng.player.direction)
-            play_sfx("shadow_step")
-        elif name == "血怒":
-            eng._attack_effects += play_recipe("melee_hit", cx, cy, preset="bleed")
-            play_sfx("blood_frenzy")
-        elif name == "召唤英灵":
-            eng._attack_effects += play_recipe("boss_summon", cx, cy, preset="summon")
-            play_sfx("summon")
 
     def _apply_pending_damage(self):
         """时停结束 — 一次性结算所有暂存伤害。"""
@@ -667,7 +642,7 @@ class GameScene(Scene):
             m.update_ai(eng.player, eng.game_map, delta_time,
                        eng._game_time, eng.monsters, eng._attack_effects)
         if eng.player.combat.current_hp < hp_before:
-            play_sfx("hit")
+            self.audio.on_presentation_event("hit")
 
     def _on_monster_killed(self, monster: Monster):
         """怪物死亡 — 经验 + 掉落 + 粒子 + Boss奖励。"""
@@ -675,7 +650,7 @@ class GameScene(Scene):
         self._spawn_death_particles(monster)
         if monster.is_boss:
             if eng.player and eng.player.give_xp(XP_PER_KILL_BOSS):
-                play_sfx("levelup")
+                self.audio.on_presentation_event("levelup", 0.8)
             # D4: WorldState Boss击杀标记
             floor = eng.current_floor
             from src.game.world_state import WorldFlag
@@ -691,7 +666,7 @@ class GameScene(Scene):
             return
         xp_gained = XP_PER_KILL_BASE + int(monster.combat.max_hp * 0.5)
         if eng.player and eng.player.give_xp(xp_gained):
-            play_sfx("levelup")
+            self.audio.on_presentation_event("levelup", 0.8)
         if random.random() > LOOT_DROP_CHANCE:
             pass  # always fall through to relic checks
         else:
@@ -765,12 +740,12 @@ class GameScene(Scene):
             if not self.boss_sys._phase2:
                 self.boss_sys._phase2 = True
                 self.audio.play_boss_phase2_cue()
-                # Also trigger camera shake + VFX on phase transition
-                self.presentation.trigger_shake(8)
-                self.engine._attack_effects += play_recipe(
-                    "boss_phase2",
-                    boss.entity.rect.centerx, boss.entity.rect.centery,
-                    preset="fire")
+                # G5.8.7: unified boss phase2 dispatch
+                ev = PresentationEvent(kind="boss_phase2",
+                                       cx=boss.entity.rect.centerx,
+                                       cy=boss.entity.rect.centery,
+                                       intensity=10)
+                self.engine._attack_effects += self.presentation.dispatch(ev)
 
     # ═══════════════════════════════════════════════════════════
     #  楼梯 & 楼层切换
@@ -839,7 +814,7 @@ class GameScene(Scene):
                 best_dist, best = dist, dropped
         if best and eng.player.inventory.add(best.item, eng.player):
             eng.ground_items.remove(best)
-            play_sfx("pickup", 0.4)
+            self.audio.on_presentation_event("pickup", 0.4)
 
     # ═══════════════════════════════════════════════════════════
     #  特殊房间交互 (B8/B9/B10)
@@ -1291,12 +1266,12 @@ class GameScene(Scene):
         room_ty = eng.stairs_pos[1] if eng.stairs_pos else MAP_HEIGHT // 2
         boss = spawn_boss(room_tx, room_ty, eng.current_floor)
         eng.monsters.append(boss)
-        self.boss_sys.init_on_spawn(boss, eng.current_floor)  # D0: 生命周期
-        # G5.8.3: boss landing camera effect
+        self.boss_sys.init_on_spawn(boss, eng.current_floor)
+        # G5.8.7: boss landing dispatch
         px, py = eng.game_map.tile_to_pixel(room_tx, room_ty)
         self.presentation.trigger_boss_landing()
-        eng._attack_effects += play_recipe("boss_phase2", px, py,
-                                           preset="fire")
+        ev = PresentationEvent(kind="boss_landing", cx=px, cy=py)
+        eng._attack_effects += self.presentation.dispatch(ev)
 
     def _update_boss_cinematic(self, delta_time: float):
         """Boss 1秒特写倒计时 → 切换到 playing。"""
