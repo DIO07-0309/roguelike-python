@@ -406,7 +406,15 @@ roguelike/
 | G6.4 | Biome Events: 6 risk/reward events + module boundary cleanup (Presentation no longer depends on BuildScore) | ✅ |
 | G6.5 | Encounter Framework: unified NPC/dialogue/trade/event model + 6 NPC encounters (2 per biome) + multi-round dialogue engine | ✅ |
 | G6.6 | Exploration: secret encounters via wall_interact + SECRET room placement + conditions[] pre-emptive field | ✅ |
-| G6.7 | Meta Progression: 3-layer Flags (RunFlag/MetaFlag/SaveFlag) + ConditionEvaluator DSL + Action dict+string dual format + IF→SHOW→DO pipeline | ✅ |
+| G6.7 | Meta Progression: 3-layer Flags + ConditionEvaluator DSL + Action dict+string dual format + IF→SHOW→DO | ✅ |
+| G7.1 | World Validator: tools/world_validator.py — 20+ JSON cross-ref checker, 0 errors 0 warnings | ✅ |
+| G7.2 | Automated Test Framework: GoogleTest + 9 suites/43 tests + CI workflow (ENABLE_TESTS=ON) | ✅ |
+| G7.3 | Simulation & Balance: SimulationConfig + RunResult + JSON report + per-build/relic/enemy stats | ✅ |
+| G7.4 | DecisionAgent Upgrade: BuildType-aware behavioral profiles + action evaluator + event decider | ✅ |
+| G8.1 | Behavior Tree: BTNode/Selector/Sequence/Condition/Action/Blackboard + BTAgent + 16 tests | ✅ |
+| G8.2 | Navigation: A* pathfinder + MoveToTarget BT node + 7 astar tests | ✅ |
+| G8.3 | Combat MCTS: MCTSNode + UCT search + SimulationState clone + 16 tests + --sim-ai mcts | ✅ |
+| G8.4 | RL Environment: Gym-like API + Observation + RandomAgent + QAgent + 17 tests + --rl-test/train | ✅ |
 
 ---
 
